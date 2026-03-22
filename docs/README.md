@@ -11,6 +11,7 @@ MagicTrack 문서 인덱스입니다.
 
 - [릴리즈 노트 v1.1.0](release/release-notes-v1.1.0.md)
 - [GitHub Release 본문 템플릿](release/github-release-template-v1.1.0.md)
+- [GitHub Release 최종 본문](release/github-release-body-v1.1.0.md)
 
 ## Publish
 

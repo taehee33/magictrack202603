@@ -43,6 +43,7 @@ MagicTrack는 맥북 내장 트랙패드와 블루투스 매직 트랙패드의 
 - [User Installation Guide (English)](docs/install/install-guide-en.md)
 - [릴리즈 노트 v1.1.0](docs/release/release-notes-v1.1.0.md)
 - [GitHub Release 본문 템플릿](docs/release/github-release-template-v1.1.0.md)
+- [GitHub Release 최종 본문](docs/release/github-release-body-v1.1.0.md)
 - [공개 배포 체크리스트](docs/publish/public-release-checklist.md)
 
 ## 로컬 빌드
