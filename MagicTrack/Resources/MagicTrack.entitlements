@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- App Sandbox 비활성화 (IOKit 저수준 접근 필요) -->
+    <key>com.apple.security.app-sandbox</key>
+    <false/>
+
+    <!-- 네트워크 불필요 -->
+    <key>com.apple.security.network.client</key>
+    <false/>
+
+    <!-- 입력 모니터링 (트랙패드 감도 제어) -->
+    <key>com.apple.security.input-monitoring</key>
+    <true/>
+
+    <!-- 임시 예외: IOKit 직접 접근 -->
+    <key>com.apple.security.temporary-exception.iokit-user-client-class</key>
+    <array>
+        <string>IOHIDParamUserClient</string>
+        <string>IOHIDEventSystemUserClient</string>
+    </array>
+
+    <!-- 블루투스 HID 디바이스(매직 트랙패드 등) 접근 -->
+    <key>com.apple.security.device.bluetooth</key>
+    <true/>
+</dict>
+</plist>

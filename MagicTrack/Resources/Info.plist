@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>$(DEVELOPMENT_LANGUAGE)</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.1.0</string>
+    <key>CFBundleVersion</key>
+    <string>2</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+    <key>LSUIElement</key>
+    <false/>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+
+    <!-- 권한 사용 설명 -->
+    <key>NSInputMonitoringUsageDescription</key>
+    <string>트랙패드 감도를 개별 조절하기 위해 입력 모니터링 권한이 필요합니다.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>앱 자동전환 기능을 위해 AppleEvents 권한이 필요합니다.</string>
+
+    <!-- 블루투스 사용 설명 -->
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>블루투스 매직 트랙패드를 감지하기 위해 블루투스 접근이 필요합니다.</string>
+</dict>
+</plist>

@@ -1,0 +1,392 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1A2B3C4D5E6F708192A3B4C5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F708192A3B4C4 /* Assets.xcassets */; };
+		2C634814273F44B79DB36CB2 /* MagicTrackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2869ACE5F4974877B8AF7AA7 /* MagicTrackApp.swift */; };
+		6E040DF3F6E44AD89042FA0E /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108312D0321249A9B1369F95 /* AppDelegate.swift */; };
+		DE4BF6B9A36740949D780984 /* TrackpadDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77C7E94D0E1D4532A9B3DDEB /* TrackpadDevice.swift */; };
+		7C7A3BE8D4494714909DB74C /* TrackpadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FC58C51A7045CD9F73A9A2 /* TrackpadManager.swift */; };
+		EDDFF6904BE845BE98FD8911 /* SensitivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41FBA1F7514C48DBAA76773D /* SensitivityController.swift */; };
+		267D3C14B98944849F641D7F /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710B191BCEEC468DAB30FC91 /* PermissionManager.swift */; };
+		DC15D4EEA4254506BC70EF78 /* PresetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14EB793560744C9F999E7DA3 /* PresetManager.swift */; };
+		AC3671FA15C64539BD5DE28E /* AppSwitcherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B580DAC25E2D41C4A218656A /* AppSwitcherManager.swift */; };
+		3B5567A40FBC4DDBB7697395 /* SensitivitySlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5606FDD9AB894612AAD69336 /* SensitivitySlider.swift */; };
+		52CB377D72D949F4B2956B6B /* TrackpadIllustration.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE8A4AB747B4AA1B4D223DC /* TrackpadIllustration.swift */; };
+		F370F8124999486EBF4DA8FB /* TrackpadCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD40BFF2A0B649A99DFE19F1 /* TrackpadCardView.swift */; };
+		45EEE342787D4EB8931B73C9 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F2C813A8D244AFB2D9FB73 /* MainView.swift */; };
+		2A46F59E22C546D8805D2FD5 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03A88287DB374C7F955B57FD /* MenuBarView.swift */; };
+		EC6ABA2063034711BD19EC74 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCCFC6A433E4F1EA49A469A /* SettingsView.swift */; };
+		64027C004020467E90037DB7 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E633E51D5D994727AB69DD02 /* IOKit.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1A2B3C4D5E6F708192A3B4C2 /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Resources; sourceTree = "<group>"; };
+		1A2B3C4D5E6F708192A3B4C3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1A2B3C4D5E6F708192A3B4C4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1A2B3C4D5E6F708192A3B4C6 /* MagicTrack.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MagicTrack.entitlements; sourceTree = "<group>"; };
+		2869ACE5F4974877B8AF7AA7 /* MagicTrackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MagicTrackApp.swift"; sourceTree = "<group>"; };
+		108312D0321249A9B1369F95 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate.swift"; sourceTree = "<group>"; };
+		77C7E94D0E1D4532A9B3DDEB /* TrackpadDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackpadDevice.swift"; sourceTree = "<group>"; };
+		22FC58C51A7045CD9F73A9A2 /* TrackpadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackpadManager.swift"; sourceTree = "<group>"; };
+		41FBA1F7514C48DBAA76773D /* SensitivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SensitivityController.swift"; sourceTree = "<group>"; };
+		710B191BCEEC468DAB30FC91 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PermissionManager.swift"; sourceTree = "<group>"; };
+		14EB793560744C9F999E7DA3 /* PresetManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PresetManager.swift"; sourceTree = "<group>"; };
+		B580DAC25E2D41C4A218656A /* AppSwitcherManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppSwitcherManager.swift"; sourceTree = "<group>"; };
+		5606FDD9AB894612AAD69336 /* SensitivitySlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SensitivitySlider.swift"; sourceTree = "<group>"; };
+		ECE8A4AB747B4AA1B4D223DC /* TrackpadIllustration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackpadIllustration.swift"; sourceTree = "<group>"; };
+		CD40BFF2A0B649A99DFE19F1 /* TrackpadCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackpadCardView.swift"; sourceTree = "<group>"; };
+		51F2C813A8D244AFB2D9FB73 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainView.swift"; sourceTree = "<group>"; };
+		03A88287DB374C7F955B57FD /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MenuBarView.swift"; sourceTree = "<group>"; };
+		3CCCFC6A433E4F1EA49A469A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView.swift"; sourceTree = "<group>"; };
+		E633E51D5D994727AB69DD02 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		C4B2E2ABBB3F44AEB8ADCFCD /* MagicTrack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MagicTrack.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A394F40FE9B64206AE2C124F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				64027C004020467E90037DB7 /* IOKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		EA3F38CB505740168F47E580 = {
+			isa = PBXGroup;
+			children = (
+				97D86848F6C146BE89BAD2E4 /* App */,
+				FD986521AABE44C7AD783005 /* Core */,
+				C5D0B959D70644E68BCF4A1A /* Features */,
+				443CC18E58DA45F995EDE462 /* UI */,
+				1A2B3C4D5E6F708192A3B4C7 /* Resources */,
+				31272B54BC764496B5C265F9 /* Frameworks */,
+				5C7EBE84131F42E1B9CDE182 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		1A2B3C4D5E6F708192A3B4C7 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				1A2B3C4D5E6F708192A3B4C3 /* Info.plist */,
+				1A2B3C4D5E6F708192A3B4C6 /* MagicTrack.entitlements */,
+				1A2B3C4D5E6F708192A3B4C4 /* Assets.xcassets */,
+			);
+			name = Resources;
+			path = "MagicTrack/Resources";
+			sourceTree = "<group>";
+		};
+		97D86848F6C146BE89BAD2E4 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				2869ACE5F4974877B8AF7AA7 /* MagicTrackApp.swift */,
+				108312D0321249A9B1369F95 /* AppDelegate.swift */,
+			);
+			name = App;
+			path = "MagicTrack/App";
+			sourceTree = "<group>";
+		};
+		FD986521AABE44C7AD783005 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				77C7E94D0E1D4532A9B3DDEB /* TrackpadDevice.swift */,
+				22FC58C51A7045CD9F73A9A2 /* TrackpadManager.swift */,
+				41FBA1F7514C48DBAA76773D /* SensitivityController.swift */,
+				710B191BCEEC468DAB30FC91 /* PermissionManager.swift */,
+			);
+			name = Core;
+			path = "MagicTrack/Core";
+			sourceTree = "<group>";
+		};
+		C5D0B959D70644E68BCF4A1A /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				D8EE39F09C9C4D18858FAACD /* Presets */,
+				6B3D6703C7994F7D9A31F858 /* AppSwitcher */,
+			);
+			name = Features;
+			path = "MagicTrack/Features";
+			sourceTree = "<group>";
+		};
+		D8EE39F09C9C4D18858FAACD /* Presets */ = {
+			isa = PBXGroup;
+			children = (
+				14EB793560744C9F999E7DA3 /* PresetManager.swift */,
+			);
+			name = Presets;
+			path = Presets;
+			sourceTree = "<group>";
+		};
+		6B3D6703C7994F7D9A31F858 /* AppSwitcher */ = {
+			isa = PBXGroup;
+			children = (
+				B580DAC25E2D41C4A218656A /* AppSwitcherManager.swift */,
+			);
+			name = AppSwitcher;
+			path = AppSwitcher;
+			sourceTree = "<group>";
+		};
+		443CC18E58DA45F995EDE462 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				33FE7435692A4ABF9D005973 /* Components */,
+				6A0677D9BAC24A6598269267 /* MainWindow */,
+				1E84F6258543449F97CFDFA5 /* MenuBar */,
+				77249EDBA06D44A4A0AE4CCA /* Settings */,
+			);
+			name = UI;
+			path = "MagicTrack/UI";
+			sourceTree = "<group>";
+		};
+		33FE7435692A4ABF9D005973 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				5606FDD9AB894612AAD69336 /* SensitivitySlider.swift */,
+				ECE8A4AB747B4AA1B4D223DC /* TrackpadIllustration.swift */,
+			);
+			name = Components;
+			path = Components;
+			sourceTree = "<group>";
+		};
+		6A0677D9BAC24A6598269267 /* MainWindow */ = {
+			isa = PBXGroup;
+			children = (
+				CD40BFF2A0B649A99DFE19F1 /* TrackpadCardView.swift */,
+				51F2C813A8D244AFB2D9FB73 /* MainView.swift */,
+			);
+			name = MainWindow;
+			path = MainWindow;
+			sourceTree = "<group>";
+		};
+		1E84F6258543449F97CFDFA5 /* MenuBar */ = {
+			isa = PBXGroup;
+			children = (
+				03A88287DB374C7F955B57FD /* MenuBarView.swift */,
+			);
+			name = MenuBar;
+			path = MenuBar;
+			sourceTree = "<group>";
+		};
+		77249EDBA06D44A4A0AE4CCA /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				3CCCFC6A433E4F1EA49A469A /* SettingsView.swift */,
+			);
+			name = Settings;
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		31272B54BC764496B5C265F9 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E633E51D5D994727AB69DD02 /* IOKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		5C7EBE84131F42E1B9CDE182 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C4B2E2ABBB3F44AEB8ADCFCD /* MagicTrack.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		33296580EB5545F28DE8503E /* MagicTrack */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE8F0D355054470788177345;
+			buildPhases = (
+				70C19E1746F246F295F7D2C6 /* Sources */,
+				A394F40FE9B64206AE2C124F /* Frameworks */,
+				CFCE550EBB0E46B8A08C2FC5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MagicTrack;
+			productName = MagicTrack;
+			productReference = C4B2E2ABBB3F44AEB8ADCFCD /* MagicTrack.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		020F43824AAD45469793C21D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					33296580EB5545F28DE8503E = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = 170C2B3AD3C346938EC5E16A;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = ko;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				ko,
+				en,
+				Base,
+			);
+			mainGroup = EA3F38CB505740168F47E580;
+			productRefGroup = 5C7EBE84131F42E1B9CDE182 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				33296580EB5545F28DE8503E /* MagicTrack */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CFCE550EBB0E46B8A08C2FC5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A2B3C4D5E6F708192A3B4C5 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		70C19E1746F246F295F7D2C6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2C634814273F44B79DB36CB2 /* MagicTrackApp.swift in Sources */,
+				6E040DF3F6E44AD89042FA0E /* AppDelegate.swift in Sources */,
+				DE4BF6B9A36740949D780984 /* TrackpadDevice.swift in Sources */,
+				7C7A3BE8D4494714909DB74C /* TrackpadManager.swift in Sources */,
+				EDDFF6904BE845BE98FD8911 /* SensitivityController.swift in Sources */,
+				267D3C14B98944849F641D7F /* PermissionManager.swift in Sources */,
+				DC15D4EEA4254506BC70EF78 /* PresetManager.swift in Sources */,
+				AC3671FA15C64539BD5DE28E /* AppSwitcherManager.swift in Sources */,
+				3B5567A40FBC4DDBB7697395 /* SensitivitySlider.swift in Sources */,
+				52CB377D72D949F4B2956B6B /* TrackpadIllustration.swift in Sources */,
+				F370F8124999486EBF4DA8FB /* TrackpadCardView.swift in Sources */,
+				45EEE342787D4EB8931B73C9 /* MainView.swift in Sources */,
+				2A46F59E22C546D8805D2FD5 /* MenuBarView.swift in Sources */,
+				EC6ABA2063034711BD19EC74 /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		44EBA6E19AA74B5590786093 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("DEBUG=1", "$(inherited)");
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		C60F2A9430F2442B8F9D32B5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		4F4B09BAF532488BAC76AF37 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/MagicTrack/Resources/MagicTrack.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/MagicTrack/Resources/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.magictrack.app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D1A767A71D4040D4BF9E3E63 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/MagicTrack/Resources/MagicTrack.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/MagicTrack/Resources/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.magictrack.app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		170C2B3AD3C346938EC5E16A /* Build configuration list for PBXProject "MagicTrack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				44EBA6E19AA74B5590786093 /* Debug */,
+				C60F2A9430F2442B8F9D32B5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CE8F0D355054470788177345 /* Build configuration list for PBXNativeTarget "MagicTrack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F4B09BAF532488BAC76AF37 /* Debug */,
+				D1A767A71D4040D4BF9E3E63 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 020F43824AAD45469793C21D /* Project object */;
+}

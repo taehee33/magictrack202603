@@ -1,0 +1,19 @@
+.DS_Store
+
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+
+# Build output
+build/
+dist/
+DerivedData/
+
+# Signing and provisioning artifacts
+*.p12
+*.cer
+*.mobileprovision
+
+# Temporary files
+*.tmp
+*.swp
