@@ -23,11 +23,11 @@ struct TrackpadPreset: Codable, Identifiable, Equatable {
         id: UUID = UUID(),
         name: String,
         emoji: String = "⚡",
-        internalTrackingSpeed: Double = 7,
-        internalScrollSpeed: Double = 5,
+        internalTrackingSpeed: Double = 4,
+        internalScrollSpeed: Double = 4,
         internalClickPressure: Int = 1,
-        magicTrackingSpeed: Double = 7,
-        magicScrollSpeed: Double = 5,
+        magicTrackingSpeed: Double = 4,
+        magicScrollSpeed: Double = 4,
         magicClickPressure: Int = 1,
         magicRotation: TrackpadRotation = .standard
     ) {
@@ -43,16 +43,16 @@ struct TrackpadPreset: Codable, Identifiable, Equatable {
         self.magicRotation = magicRotation
     }
 
-    // 빌트인 기본 프리셋. 속도는 시스템 설정 칸 번호 (이동 1~10, 스크롤 1~8). "일반" = 이동 7칸·스크롤 5칸·보통
+    // 빌트인 기본 프리셋. 속도는 시스템 설정 칸 번호 (이동 1~10, 스크롤 1~8). "일반" = macOS 기본값 (이동 4칸·스크롤 4칸·보통)
     static let defaultPresets: [TrackpadPreset] = [
         TrackpadPreset(
             name: "일반",
             emoji: "☀️",
-            internalTrackingSpeed: 7,
-            internalScrollSpeed: 5,
+            internalTrackingSpeed: 4,
+            internalScrollSpeed: 4,
             internalClickPressure: 1,
-            magicTrackingSpeed: 7,
-            magicScrollSpeed: 5,
+            magicTrackingSpeed: 4,
+            magicScrollSpeed: 4,
             magicClickPressure: 1,
             magicRotation: .standard
         ),

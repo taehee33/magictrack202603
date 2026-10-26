@@ -194,14 +194,18 @@ final class TrackpadDevice: ObservableObject, Identifiable {
 }
 
 // MARK: - SpeedScale
-// macOS 시스템 설정과 같은 속도 칸. 값 표는 시스템 설정이 쓰는 PreferencePanesSupport의 표를 그대로 옮김
+// 시스템 설정과 같은 속도 칸. 값 표는 시스템 설정이 쓰는 PreferencePanesSupport의 표를 그대로 옮김
 // (MTTGestureBackEnd sTrackSpeedFactors / sScrollSpeedFactors, macOS 27.0.1에서 읽음)
+// macOS 기본값(IOHIDFamily IOHIPointing.h): 이동 EV_DEFAULTPOINTERACCELLEVEL 0xB000 = 0.6875, 스크롤 EV_DEFAULTSCROLLACCELLEVEL 0x5000 = 0.3125
+// → 둘 다 4칸
 
 enum SpeedScale {
     /// 시스템 설정 › 트랙패드 › 이동 속도 (10칸) → com.apple.trackpad.scaling
     static let trackingStops: [Double] = [0, 0.125, 0.5, 0.6875, 0.875, 1.0, 1.5, 2.0, 2.5, 3.0]
     /// 시스템 설정 › 손쉬운 사용 › 포인터 제어 › 트랙패드 옵션 › 스크롤 속도 (8칸)
     static let scrollStops: [Double] = [0, 0.125, 0.215, 0.3125, 0.5, 0.75, 1.0, 1.7]
+    static let defaultTrackingStop: Double = 4   // 0.6875
+    static let defaultScrollStop: Double = 4     // 0.3125
 
     /// 칸 번호(1부터) → 시스템 값
     static func trackingValue(stop: Double) -> Double { value(stop: stop, in: trackingStops) }
@@ -228,7 +232,28 @@ enum SpeedScale {
     /// - migratePresets: 저장된 프리셋 변환 함수 (PresetManager.migrateSavedPresetSpeeds). 테스트에서 의존을 끊기 위해 주입
     static func migrateStoredValuesIfNeeded(migratePresets: ((Double, Bool) -> Double) -> Void) {
         let defaults = UserDefaults.standard
-        guard defaults.integer(forKey: versionKey) < 2 else { return }
+        let version = defaults.integer(forKey: versionKey)
+        guard version < 4 else { return }
+        if version == 3 {
+            // v3 → v4: 스크롤 10칸(시스템 8칸 + 1.25·1.5) → 시스템과 같은 8칸 (가장 가까운 값의 칸으로)
+            let old10: [Double] = [0, 0.125, 0.215, 0.3125, 0.5, 0.75, 1.0, 1.25, 1.5, 1.7]
+            let convert = { (stop: Double) in scrollStop(forSystemValue: old10[(Int(stop.rounded()) - 1).clamped(to: 0...9)]) }
+            for type in [TrackpadType.internal, .magicTrackpad] {
+                for key in ["\(type.rawValue)_", "mac_default_\(type.rawValue)_"] {
+                    if let old = defaults.object(forKey: key + "scrollSpeed") as? Double {
+                        defaults.set(convert(old), forKey: key + "scrollSpeed")
+                    }
+                }
+            }
+            migratePresets { old, isScroll in isScroll ? convert(old) : old }
+            defaults.set(4, forKey: versionKey)
+            return
+        }
+        // v2(8칸)는 지금과 같은 표이므로 버전만 올린다
+        guard version < 2 else {
+            defaults.set(4, forKey: versionKey)
+            return
+        }
         for type in [TrackpadType.internal, .magicTrackpad] {
             for key in ["\(type.rawValue)_", "mac_default_\(type.rawValue)_"] {
                 if let old = defaults.object(forKey: key + "trackingSpeed") as? Double {
@@ -242,7 +267,7 @@ enum SpeedScale {
         migratePresets { old, isScroll in
             isScroll ? scrollStop(forSystemValue: old / 10) : trackingStop(forSystemValue: old * 0.3)
         }
-        defaults.set(2, forKey: versionKey)
+        defaults.set(4, forKey: versionKey)
     }
 }
 

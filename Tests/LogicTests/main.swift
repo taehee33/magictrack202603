@@ -54,7 +54,9 @@ check(SwitchMode.auto.next == .lockInternal && SwitchMode.lockInternal.next == .
 
 // MARK: - SpeedScale (시스템 설정 칸과 동일)
 
-check(SpeedScale.trackingStops.count == 10 && SpeedScale.scrollStops.count == 8, "칸 수: 이동 10, 스크롤 8")
+check(SpeedScale.trackingStops.count == 10 && SpeedScale.scrollStops.count == 8, "칸 수: 이동 10, 스크롤 8 (시스템과 동일)")
+check(SpeedScale.trackingValue(stop: SpeedScale.defaultTrackingStop) == 0.6875 && SpeedScale.scrollValue(stop: SpeedScale.defaultScrollStop) == 0.3125, "macOS 기본값 = 4칸 (0xB000, 0x5000)")
+check(SpeedScale.scrollStops == [0, 0.125, 0.215, 0.3125, 0.5, 0.75, 1.0, 1.7], "스크롤 칸 값 = 시스템 sScrollSpeedFactors")
 check(SpeedScale.trackingValue(stop: 1) == 0 && SpeedScale.trackingValue(stop: 7) == 1.5 && SpeedScale.trackingValue(stop: 10) == 3, "이동 칸 → 시스템 값")
 check(SpeedScale.trackingStop(forSystemValue: 1.5147) == 7, "현재 매직 값 1.5147 → 7칸")
 check(SpeedScale.trackingStop(forSystemValue: 5.0 * 0.3) == 7, "기존 앱 5 → 7칸 (시스템 가운데 아님)")
