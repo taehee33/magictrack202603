@@ -226,17 +226,17 @@ final class RotationEngine: ObservableObject {
     private var lastTargetTime: CFAbsoluteTime = 0
     private var idleTimer: Timer?
 
-    /// 매직 트랙패드 이동 속도 설정 (UI 0~10)
-    private var trackingSpeed = 5.0
+    /// 매직 트랙패드 이동 속도 (시스템 설정 칸 1~10)
+    private var trackingSpeed = 7.0
     /// 최근 손가락 이동량 (속도 계산용)
     private var recentTravel: [(time: CFAbsoluteTime, travel: Double)] = []
 
     /// 손가락 1mm가 몇 포인트가 될지. macOS 실측 곡선(실측/rotate/calibration.txt, 속도 설정 5 기준):
     /// 10mm/s ≈ 4.5pt, 100mm/s ≈ 20pt, 250mm/s 이상 ≈ 50pt → 대략 4 + 0.17·v, 50에서 멈춤.
-    /// 다른 속도 설정은 macOS 이동 속도 값(0~3)의 비율로 늘리거나 줄인다
+    /// 다른 속도 설정은 macOS 이동 속도 값(0~3)의 비율로 늘리거나 줄인다 (측정 시 값 1.5147)
     private func pointerGain(mmPerSecond v: Double) -> Double {
         let measured = min(4 + 0.17 * v, 50)
-        let scale = (0.15 + trackingSpeed / 10 * 3) / (0.15 + 0.505 * 3)
+        let scale = (0.15 + SpeedScale.trackingValue(stop: trackingSpeed)) / (0.15 + 1.5147)
         return measured * scale
     }
 

@@ -289,6 +289,9 @@ struct MenuBarView: View {
                     .font(.system(size: 10))
                     .foregroundStyle(.orange)
             }
+            Text("앱이 켜져 있는 동안 시스템 설정보다 우선 적용 · 끄면 시스템 설정으로 복귀")
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 14)
     }
@@ -340,6 +343,7 @@ private struct CompactDeviceSection: View {
                         trackpadManager.applySettings(for: device)
                     }
                 ),
+                range: TrackpadDevice.trackingRange,
                 color: accentColor
             )
 
@@ -352,6 +356,7 @@ private struct CompactDeviceSection: View {
                         trackpadManager.applySettings(for: device)
                     }
                 ),
+                range: TrackpadDevice.scrollRange,
                 color: accentColor
             )
 
@@ -402,6 +407,7 @@ private struct CompactDeviceSection: View {
 private struct CompactSliderRow: View {
     let label: String
     @Binding var value: Double
+    let range: ClosedRange<Double>
     let color: Color
 
     var body: some View {
@@ -411,10 +417,11 @@ private struct CompactSliderRow: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 34, alignment: .leading)
 
-            Slider(value: $value, in: TrackpadDevice.speedRange)
+            // 시스템 설정과 같은 칸에만 멈춤
+            Slider(value: $value, in: range, step: 1)
                 .tint(color)
 
-            Text(String(format: "%.1f", value))
+            Text(String(format: "%.0f", value))
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
                 .foregroundStyle(color)
                 .frame(width: 28)

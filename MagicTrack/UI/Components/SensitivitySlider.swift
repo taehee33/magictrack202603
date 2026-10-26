@@ -8,6 +8,8 @@ struct SensitivitySlider: View {
     let systemImage: String
     @Binding var value: Double
     let range: ClosedRange<Double>
+    /// 칸 단위 (시스템 설정처럼 정해진 칸에만 멈춤). nil이면 연속값
+    var step: Double? = nil
     let accentColor: Color
     let onChange: (Double) -> Void
 
@@ -18,11 +20,20 @@ struct SensitivitySlider: View {
     private func commitTextInput() {
         let parsed = Double(textValue.replacingOccurrences(of: ",", with: "."))
         if let v = parsed {
-            let clamped = min(max(v, range.lowerBound), range.upperBound)
+            let clamped = snap(min(max(v, range.lowerBound), range.upperBound))
             value = clamped
             onChange(clamped)
         }
-        textValue = String(format: "%.1f", value)
+        textValue = format(value)
+    }
+
+    private func snap(_ v: Double) -> Double {
+        guard let step else { return v }
+        return ((v - range.lowerBound) / step).rounded() * step + range.lowerBound
+    }
+
+    private func format(_ v: Double) -> String {
+        step.map { $0 >= 1 ? String(format: "%.0f", v) : String(format: "%.1f", v) } ?? String(format: "%.1f", v)
     }
 
     var body: some View {
@@ -61,9 +72,9 @@ struct SensitivitySlider: View {
                         if !focused { commitTextInput() }
                     }
                     .onChange(of: value) { _, newValue in
-                        if !isValueFocused { textValue = String(format: "%.1f", newValue) }
+                        if !isValueFocused { textValue = format(newValue) }
                     }
-                    .onAppear { textValue = String(format: "%.1f", value) }
+                    .onAppear { textValue = format(value) }
             }
 
             GeometryReader { geo in
@@ -108,7 +119,9 @@ struct SensitivitySlider: View {
                             isDragging = true
                             let raw = gesture.location.x / geo.size.width
                             let newValue = (range.upperBound - range.lowerBound) * Double(raw) + range.lowerBound
-                            value = newValue.clamped(to: range)
+                            let snapped = snap(newValue.clamped(to: range))
+                            guard snapped != value || step == nil else { return }
+                            value = snapped
                             onChange(value)
                         }
                         .onEnded { _ in
@@ -117,6 +130,21 @@ struct SensitivitySlider: View {
                 )
             }
             .frame(height: 20)
+
+            // 칸 눈금: 시스템 설정처럼 멈추는 자리마다 점을 찍는다
+            if let step {
+                let count = Int(((range.upperBound - range.lowerBound) / step).rounded()) + 1
+                GeometryReader { geo in
+                    ForEach(0..<count, id: \.self) { i in
+                        let stopValue = range.lowerBound + Double(i) * step
+                        Circle()
+                            .fill(stopValue <= value ? accentColor.opacity(0.8) : Color.primary.opacity(0.3))
+                            .frame(width: 4, height: 4)
+                            .position(x: geo.size.width * CGFloat(i) / CGFloat(max(count - 1, 1)), y: 2)
+                    }
+                }
+                .frame(height: 4)
+            }
         }
     }
 }

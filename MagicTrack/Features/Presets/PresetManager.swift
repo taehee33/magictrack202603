@@ -23,11 +23,11 @@ struct TrackpadPreset: Codable, Identifiable, Equatable {
         id: UUID = UUID(),
         name: String,
         emoji: String = "⚡",
-        internalTrackingSpeed: Double = 5.0,
-        internalScrollSpeed: Double = 5.0,
+        internalTrackingSpeed: Double = 7,
+        internalScrollSpeed: Double = 5,
         internalClickPressure: Int = 1,
-        magicTrackingSpeed: Double = 5.0,
-        magicScrollSpeed: Double = 5.0,
+        magicTrackingSpeed: Double = 7,
+        magicScrollSpeed: Double = 5,
         magicClickPressure: Int = 1,
         magicRotation: TrackpadRotation = .standard
     ) {
@@ -43,49 +43,49 @@ struct TrackpadPreset: Codable, Identifiable, Equatable {
         self.magicRotation = magicRotation
     }
 
-    // 빌트인 기본 프리셋. "일반" = 기본값(5,5,보통)
+    // 빌트인 기본 프리셋. 속도는 시스템 설정 칸 번호 (이동 1~10, 스크롤 1~8). "일반" = 이동 7칸·스크롤 5칸·보통
     static let defaultPresets: [TrackpadPreset] = [
         TrackpadPreset(
             name: "일반",
             emoji: "☀️",
-            internalTrackingSpeed: 5.0,
-            internalScrollSpeed: 5.0,
+            internalTrackingSpeed: 7,
+            internalScrollSpeed: 5,
             internalClickPressure: 1,
-            magicTrackingSpeed: 5.0,
-            magicScrollSpeed: 5.0,
+            magicTrackingSpeed: 7,
+            magicScrollSpeed: 5,
             magicClickPressure: 1,
             magicRotation: .standard
         ),
         TrackpadPreset(
             name: "코딩",
             emoji: "💻",
-            internalTrackingSpeed: 6.5,
-            internalScrollSpeed: 6.5,
+            internalTrackingSpeed: 8,
+            internalScrollSpeed: 6,
             internalClickPressure: 1,
-            magicTrackingSpeed: 8.5,
-            magicScrollSpeed: 10.0,
+            magicTrackingSpeed: 9,
+            magicScrollSpeed: 7,
             magicClickPressure: 0,
             magicRotation: .standard
         ),
         TrackpadPreset(
             name: "디자인",
             emoji: "🎨",
-            internalTrackingSpeed: 5.0,
-            internalScrollSpeed: 5.0,
+            internalTrackingSpeed: 7,
+            internalScrollSpeed: 5,
             internalClickPressure: 0,
-            magicTrackingSpeed: 3.5,
-            magicScrollSpeed: 5.0,
+            magicTrackingSpeed: 6,
+            magicScrollSpeed: 5,
             magicClickPressure: 0,
             magicRotation: .standard
         ),
         TrackpadPreset(
             name: "게임",
             emoji: "🎮",
-            internalTrackingSpeed: 10.0,
-            internalScrollSpeed: 10.0,
+            internalTrackingSpeed: 10,
+            internalScrollSpeed: 7,
             internalClickPressure: 2,
-            magicTrackingSpeed: 10.0,
-            magicScrollSpeed: 10.0,
+            magicTrackingSpeed: 10,
+            magicScrollSpeed: 7,
             magicClickPressure: 2,
             magicRotation: .standard
         )
@@ -104,7 +104,22 @@ final class PresetManager: ObservableObject {
     private let activePresetKey = "active_preset_id"
 
     private init() {
+        SpeedScale.migrateStoredValuesIfNeeded(migratePresets: Self.migrateSavedPresetSpeeds)
         loadPresets()
+    }
+
+    /// 저장된 프리셋의 속도 값을 한 번 변환 (SpeedScale 마이그레이션에서 호출). convert(값, 스크롤 여부)
+    static func migrateSavedPresetSpeeds(_ convert: (Double, Bool) -> Double) {
+        let key = "saved_presets"
+        guard let data = UserDefaults.standard.data(forKey: key),
+              var list = try? JSONDecoder().decode([TrackpadPreset].self, from: data) else { return }
+        for i in list.indices {
+            list[i].internalTrackingSpeed = convert(list[i].internalTrackingSpeed, false)
+            list[i].internalScrollSpeed = convert(list[i].internalScrollSpeed, true)
+            list[i].magicTrackingSpeed = convert(list[i].magicTrackingSpeed, false)
+            list[i].magicScrollSpeed = convert(list[i].magicScrollSpeed, true)
+        }
+        if let encoded = try? JSONEncoder().encode(list) { UserDefaults.standard.set(encoded, forKey: key) }
     }
 
     var activePreset: TrackpadPreset? {
@@ -172,11 +187,11 @@ final class PresetManager: ObservableObject {
         let preset = TrackpadPreset(
             name: name,
             emoji: emoji,
-            internalTrackingSpeed: manager.internalTrackpad?.trackingSpeed ?? TrackpadDevice.defaultSpeed,
-            internalScrollSpeed: manager.internalTrackpad?.scrollSpeed ?? TrackpadDevice.defaultSpeed,
+            internalTrackingSpeed: manager.internalTrackpad?.trackingSpeed ?? TrackpadDevice.defaultTrackingSpeed(for: .internal),
+            internalScrollSpeed: manager.internalTrackpad?.scrollSpeed ?? TrackpadDevice.defaultScrollSpeed(for: .internal),
             internalClickPressure: manager.internalTrackpad?.clickPressure ?? 1,
-            magicTrackingSpeed: manager.magicTrackpad?.trackingSpeed ?? TrackpadDevice.defaultSpeed,
-            magicScrollSpeed: manager.magicTrackpad?.scrollSpeed ?? TrackpadDevice.defaultSpeed,
+            magicTrackingSpeed: manager.magicTrackpad?.trackingSpeed ?? TrackpadDevice.defaultTrackingSpeed(for: .magicTrackpad),
+            magicScrollSpeed: manager.magicTrackpad?.scrollSpeed ?? TrackpadDevice.defaultScrollSpeed(for: .magicTrackpad),
             magicClickPressure: manager.magicTrackpad?.clickPressure ?? 1,
             magicRotation: manager.magicTrackpad?.rotation ?? .standard
         )

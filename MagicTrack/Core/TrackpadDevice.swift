@@ -67,14 +67,13 @@ final class TrackpadDevice: ObservableObject, Identifiable {
     let serialNumber: String
 
     @Published var isConnected: Bool
-    @Published var trackingSpeed: Double      // 0.0 ~ 10.0 (UI/저장), 기본 5
-    @Published var scrollSpeed: Double        // 0.0 ~ 10.0 (UI/저장), 기본 5
+    @Published var trackingSpeed: Double      // 시스템 설정 '이동 속도' 슬라이더 칸 1 ~ 10
+    @Published var scrollSpeed: Double        // 시스템 손쉬운 사용 '스크롤 속도' 슬라이더 칸 1 ~ 8
     @Published var clickPressure: Int         // 0 ~ 2 (Light / Medium / Firm)
     @Published var rotation: TrackpadRotation
 
-    /// 이동/스크롤 속도 UI 범위 (시스템은 0~3 사용)
-    static let speedRange: ClosedRange<Double> = 0.0...10.0
-    static let defaultSpeed: Double = 5.0
+    static let trackingRange: ClosedRange<Double> = 1...Double(SpeedScale.trackingStops.count)
+    static let scrollRange: ClosedRange<Double> = 1...Double(SpeedScale.scrollStops.count)
     private static let macDefaultPrefix = "mac_default_"
 
     init(
@@ -98,12 +97,12 @@ final class TrackpadDevice: ObservableObject, Identifiable {
         let key = "\(type.rawValue)_"
         let defaults = UserDefaults.standard
         if defaults.object(forKey: key + "trackingSpeed") != nil {
-            self.trackingSpeed = defaults.double(forKey: key + "trackingSpeed").clamped(to: TrackpadDevice.speedRange)
+            self.trackingSpeed = defaults.double(forKey: key + "trackingSpeed").rounded().clamped(to: TrackpadDevice.trackingRange)
         } else {
             self.trackingSpeed = TrackpadDevice.defaultTrackingSpeed(for: type)
         }
         if defaults.object(forKey: key + "scrollSpeed") != nil {
-            self.scrollSpeed = defaults.double(forKey: key + "scrollSpeed").clamped(to: TrackpadDevice.speedRange)
+            self.scrollSpeed = defaults.double(forKey: key + "scrollSpeed").rounded().clamped(to: TrackpadDevice.scrollRange)
         } else {
             self.scrollSpeed = TrackpadDevice.defaultScrollSpeed(for: type)
         }
@@ -135,13 +134,13 @@ final class TrackpadDevice: ObservableObject, Identifiable {
     static func defaultTrackingSpeed(for type: TrackpadType) -> Double {
         UserDefaults.standard.object(forKey: macDefaultKey(for: type, suffix: "trackingSpeed")) != nil
             ? UserDefaults.standard.double(forKey: macDefaultKey(for: type, suffix: "trackingSpeed"))
-            : TrackpadDevice.defaultSpeed
+            : SpeedScale.trackingStop(forSystemValue: SensitivityController.shared.getCurrentTrackingSpeed())
     }
 
     static func defaultScrollSpeed(for type: TrackpadType) -> Double {
         UserDefaults.standard.object(forKey: macDefaultKey(for: type, suffix: "scrollSpeed")) != nil
             ? UserDefaults.standard.double(forKey: macDefaultKey(for: type, suffix: "scrollSpeed"))
-            : TrackpadDevice.defaultSpeed
+            : SpeedScale.scrollStop(forSystemValue: SensitivityController.shared.getCurrentScrollSpeed())
     }
 
     static func defaultClickPressure(for type: TrackpadType) -> Int {
@@ -155,19 +154,19 @@ final class TrackpadDevice: ObservableObject, Identifiable {
 
         captureIfNeeded(
             key: macDefaultKey(for: .internal, suffix: "trackingSpeed"),
-            value: uiTrackingValue(fromSystemTracking: controller.getCurrentTrackingSpeed())
+            value: SpeedScale.trackingStop(forSystemValue: controller.getCurrentTrackingSpeed())
         )
         captureIfNeeded(
             key: macDefaultKey(for: .magicTrackpad, suffix: "trackingSpeed"),
-            value: uiTrackingValue(fromSystemTracking: controller.getCurrentTrackingSpeed())
+            value: SpeedScale.trackingStop(forSystemValue: controller.getCurrentTrackingSpeed())
         )
         captureIfNeeded(
             key: macDefaultKey(for: .internal, suffix: "scrollSpeed"),
-            value: uiScrollValue(fromSystemScroll: controller.getCurrentScrollSpeed())
+            value: SpeedScale.scrollStop(forSystemValue: controller.getCurrentScrollSpeed())
         )
         captureIfNeeded(
             key: macDefaultKey(for: .magicTrackpad, suffix: "scrollSpeed"),
-            value: uiScrollValue(fromSystemScroll: controller.getCurrentScrollSpeed())
+            value: SpeedScale.scrollStop(forSystemValue: controller.getCurrentScrollSpeed())
         )
         captureIfNeeded(
             key: macDefaultKey(for: .internal, suffix: "clickPressure"),
@@ -189,16 +188,61 @@ final class TrackpadDevice: ObservableObject, Identifiable {
         UserDefaults.standard.set(value, forKey: key)
     }
 
-    private static func macDefaultKey(for type: TrackpadType, suffix: String) -> String {
+    static func macDefaultKey(for type: TrackpadType, suffix: String) -> String {
         "\(macDefaultPrefix)\(type.rawValue)_\(suffix)"
     }
+}
 
-    private static func uiTrackingValue(fromSystemTracking value: Double) -> Double {
-        (value / 3.0 * 10.0).clamped(to: speedRange)
+// MARK: - SpeedScale
+// macOS 시스템 설정과 같은 속도 칸. 값 표는 시스템 설정이 쓰는 PreferencePanesSupport의 표를 그대로 옮김
+// (MTTGestureBackEnd sTrackSpeedFactors / sScrollSpeedFactors, macOS 27.0.1에서 읽음)
+
+enum SpeedScale {
+    /// 시스템 설정 › 트랙패드 › 이동 속도 (10칸) → com.apple.trackpad.scaling
+    static let trackingStops: [Double] = [0, 0.125, 0.5, 0.6875, 0.875, 1.0, 1.5, 2.0, 2.5, 3.0]
+    /// 시스템 설정 › 손쉬운 사용 › 포인터 제어 › 트랙패드 옵션 › 스크롤 속도 (8칸)
+    static let scrollStops: [Double] = [0, 0.125, 0.215, 0.3125, 0.5, 0.75, 1.0, 1.7]
+
+    /// 칸 번호(1부터) → 시스템 값
+    static func trackingValue(stop: Double) -> Double { value(stop: stop, in: trackingStops) }
+    static func scrollValue(stop: Double) -> Double { value(stop: stop, in: scrollStops) }
+
+    /// 시스템 값 → 가장 가까운 칸 번호(1부터)
+    static func trackingStop(forSystemValue v: Double) -> Double { nearestStop(v, in: trackingStops) }
+    static func scrollStop(forSystemValue v: Double) -> Double { nearestStop(v, in: scrollStops) }
+
+    private static func value(stop: Double, in stops: [Double]) -> Double {
+        stops[(Int(stop.rounded()) - 1).clamped(to: 0...(stops.count - 1))]
     }
 
-    private static func uiScrollValue(fromSystemScroll value: Double) -> Double {
-        (value * 10.0).clamped(to: speedRange)
+    private static func nearestStop(_ v: Double, in stops: [Double]) -> Double {
+        let index = stops.indices.min { abs(stops[$0] - v) < abs(stops[$1] - v) } ?? 0
+        return Double(index + 1)
+    }
+
+    // MARK: 한 번만 하는 변환 (v1.2.0까지의 0~10 균등 단위 → 시스템 칸)
+
+    private static let versionKey = "speed_scale_version"
+
+    /// 기존 0~10 값을 그때의 시스템 값(이동 ×0.3, 스크롤 ÷10)으로 바꾼 뒤 가장 가까운 칸으로 옮긴다
+    /// - migratePresets: 저장된 프리셋 변환 함수 (PresetManager.migrateSavedPresetSpeeds). 테스트에서 의존을 끊기 위해 주입
+    static func migrateStoredValuesIfNeeded(migratePresets: ((Double, Bool) -> Double) -> Void) {
+        let defaults = UserDefaults.standard
+        guard defaults.integer(forKey: versionKey) < 2 else { return }
+        for type in [TrackpadType.internal, .magicTrackpad] {
+            for key in ["\(type.rawValue)_", "mac_default_\(type.rawValue)_"] {
+                if let old = defaults.object(forKey: key + "trackingSpeed") as? Double {
+                    defaults.set(trackingStop(forSystemValue: old * 0.3), forKey: key + "trackingSpeed")
+                }
+                if let old = defaults.object(forKey: key + "scrollSpeed") as? Double {
+                    defaults.set(scrollStop(forSystemValue: old / 10), forKey: key + "scrollSpeed")
+                }
+            }
+        }
+        migratePresets { old, isScroll in
+            isScroll ? scrollStop(forSystemValue: old / 10) : trackingStop(forSystemValue: old * 0.3)
+        }
+        defaults.set(2, forKey: versionKey)
     }
 }
 

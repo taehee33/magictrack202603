@@ -555,6 +555,12 @@ struct MainView: View {
             Text(switchModeDescription)
                 .font(.system(size: 11))
                 .foregroundStyle(trackpadManager.switchMode == .auto && !trackpadManager.autoSwitchAvailable ? .orange : .secondary)
+
+            Label("MagicTrack이 켜져 있는 동안에는 여기 설정이 시스템 설정보다 우선 적용돼요. 앱을 끄면 시스템 설정 값으로 돌아가요. 시스템 설정에 저장된 값은 바꾸지 않아요.",
+                  systemImage: "info.circle")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

@@ -12,6 +12,7 @@ import ObjectiveC
 // - 이동 속도: IOHIDSetAccelerationWithKey(HIDTrackpadAcceleration) 즉시 반영
 // - 스크롤: IOHIDSetAccelerationWithKey(HIDTrackpadScrollAcceleration) 트랙패드에만 즉시 반영 (마우스 영향 없음)
 // - 클릭 압력: defaults 기록은 반영 안 됨 → 시스템 설정 앱과 같은 MTTGestureBackEnd 사용 시 즉시 반영
+// - 시스템 설정에 저장된 값은 바꾸지 않는다. 앱이 켜져 있는 동안만 실행 중인 값을 덮어쓰고 종료 시 되돌린다
 // - 비용(0단계 실측): IOHIDSetAccelerationWithKey 1회 약 10ms, 클릭 압력 약 7ms, 이벤트 시스템 속성 0.04ms
 //   → 자동 전환 시 이동 속도는 이벤트 시스템으로 즉시, 나머지는 백그라운드 큐에서 적용
 
@@ -50,17 +51,10 @@ final class SensitivityController {
         }
     }
 
-    // MARK: - 단위 변환 (UI 0~10)
+    // MARK: - 단위 변환 (시스템 설정과 같은 칸 번호 → 시스템 값)
 
-    /// UI 이동 속도 0~10 → 시스템 trackpad.scaling 0~3
-    private func toSystemTracking(_ value: Double) -> Double {
-        value.clamped(to: 0.0...10.0) / 10.0 * 3.0
-    }
-
-    /// UI 스크롤 속도 0~10 → 시스템 스크롤 가속 0~1
-    private func toSystemScroll(_ value: Double) -> Double {
-        value.clamped(to: 0.0...10.0) / 10.0
-    }
+    private func toSystemTracking(_ stop: Double) -> Double { SpeedScale.trackingValue(stop: stop) }
+    private func toSystemScroll(_ stop: Double) -> Double { SpeedScale.scrollValue(stop: stop) }
 
     // MARK: - 현재 시스템 값 읽기
 
@@ -106,34 +100,65 @@ final class SensitivityController {
         }
     }
 
-    /// 이동 속도 (UI 0~10). 즉시 반영 + 재부팅 후에도 유지되도록 전역 설정에도 기록
+    /// 이동 속도 (시스템 설정 칸 1~10). 실행 중인 값만 바꾸고 시스템 설정 파일(com.apple.trackpad.scaling)에는 쓰지 않는다
     func setTrackingSpeed(_ value: Double) {
-        let systemValue = toSystemTracking(value)
+        setTrackingSystemValue(toSystemTracking(value))
+    }
+
+    func setTrackingSystemValue(_ systemValue: Double) {
         if ioHIDSystemConnect != 0 || openIOHIDSystem() {
             IOHIDSetAccelerationWithKey(ioHIDSystemConnect, kIOHIDTrackpadAccelerationType as CFString, systemValue)
         }
-        CFPreferencesSetValue(Self.trackingPrefKey, NSNumber(value: systemValue), kCFPreferencesAnyApplication, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
-        CFPreferencesSynchronize(kCFPreferencesAnyApplication, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
     }
 
-    /// 트랙패드 스크롤 속도 (UI 0~10). 마우스 휠 설정(scrollwheel.scaling)은 건드리지 않는다
+    /// 트랙패드 스크롤 속도 (손쉬운 사용 칸 1~8). 실행 중인 값만 바꾼다. 마우스 휠 설정은 건드리지 않는다
     func setScrollSpeed(_ value: Double) {
-        guard ioHIDSystemConnect != 0 || openIOHIDSystem() else { return }
-        IOHIDSetAccelerationWithKey(ioHIDSystemConnect, kIOHIDTrackpadScrollAccelerationKey as CFString, toSystemScroll(value))
+        setScrollSystemValue(toSystemScroll(value))
     }
 
-    /// 클릭 압력 0(가볍게) ~ 2(단단하게). 연결된 모든 트랙패드에 함께 적용된다
+    func setScrollSystemValue(_ systemValue: Double) {
+        guard ioHIDSystemConnect != 0 || openIOHIDSystem() else { return }
+        IOHIDSetAccelerationWithKey(ioHIDSystemConnect, kIOHIDTrackpadScrollAccelerationKey as CFString, systemValue)
+    }
+
+    /// 클릭 압력 0(가볍게) ~ 2(단단하게). 연결된 모든 트랙패드에 함께 적용된다.
+    /// 드라이버가 시스템 설정 저장소에서 값을 읽는 구조라 저장소를 거칠 수밖에 없다 → 원래 값은 SystemBaseline이 기억했다가 되돌림
     func setClickPressure(_ level: Int) {
-        let level = level.clamped(to: 0...2)
-        if ClickPressureBackend.setLevel(level) { return }
-        // 백엔드를 쓸 수 없는 macOS에서는 설정 파일에만 기록 (재로그인 후 반영)
-        for domain in ["com.apple.AppleMultitouchTrackpad", "com.apple.driver.AppleBluetoothMultitouch.trackpad"] {
-            for key in ["FirstClickThreshold", "SecondClickThreshold"] {
-                CFPreferencesSetAppValue(key as CFString, NSNumber(value: level), domain as CFString)
-            }
-            CFPreferencesAppSynchronize(domain as CFString)
+        if !ClickPressureBackend.setLevel(level.clamped(to: 0...2)) {
+            print("⚠️ 클릭 압력 적용 불가 (시스템 설정 백엔드 없음)")
         }
-        print("⚠️ 클릭 압력 즉시 적용 불가 — 설정 파일에만 기록")
+    }
+
+    // MARK: - 시스템 원래 값 (앱이 켜져 있는 동안만 덮어쓰고, 끌 때 되돌림)
+
+    private let baselineKey = "system_baseline"
+    private let overrideActiveKey = "system_override_active"
+
+    /// 앱이 설정을 적용하기 전에 호출. 직전에 비정상 종료했다면 그때 기억한 원래 값을 그대로 쓴다
+    func beginOverride() {
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: overrideActiveKey), defaults.dictionary(forKey: baselineKey) != nil { return }
+        var scroll = 0.5
+        if ioHIDSystemConnect != 0 || openIOHIDSystem() {
+            IOHIDGetAccelerationWithKey(ioHIDSystemConnect, kIOHIDTrackpadScrollAccelerationKey as CFString, &scroll)
+        }
+        defaults.set([
+            "tracking": getCurrentTrackingSpeed(),   // 시스템 설정 파일에 저장된 값
+            "scroll": scroll,
+            "click": getCurrentClickPressure()
+        ], forKey: baselineKey)
+        defaults.set(true, forKey: overrideActiveKey)
+    }
+
+    /// 앱 종료 시 호출. 시스템 설정 값으로 되돌린다 (밀린 적용이 끝난 뒤)
+    func endOverride() {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: overrideActiveKey), let baseline = defaults.dictionary(forKey: baselineKey) else { return }
+        applyQueue.sync {}
+        if let tracking = baseline["tracking"] as? Double { setTrackingSystemValue(tracking) }
+        if let scroll = baseline["scroll"] as? Double { setScrollSystemValue(scroll) }
+        if let click = baseline["click"] as? Int { setClickPressure(click) }
+        defaults.set(false, forKey: overrideActiveKey)
     }
 
     private static let trackingPrefKey = "com.apple.trackpad.scaling" as CFString
@@ -148,8 +173,14 @@ private enum ClickPressureBackend {
         _ = dlopen("/System/Library/PrivateFrameworks/PreferencePanesSupport.framework/PreferencePanesSupport", RTLD_NOW)
         guard let cls = NSClassFromString("MTTGestureBackEnd") as? NSObject.Type else { return nil }
         let sharedSel = NSSelectorFromString("sharedInstance")
-        guard cls.responds(to: sharedSel) else { return nil }
-        return cls.perform(sharedSel)?.takeUnretainedValue() as? NSObject
+        guard cls.responds(to: sharedSel), let backend = cls.perform(sharedSel)?.takeUnretainedValue() as? NSObject else { return nil }
+        // 시스템 설정 앱과 달리 iCloud로 다른 Mac에 클릭 설정을 퍼뜨리지 않도록 동기화를 끈다
+        let syncSel = NSSelectorFromString("setShouldSyncChangesToCloud:")
+        if backend.responds(to: syncSel), let imp = backend.method(for: syncSel) {
+            typealias SetBool = @convention(c) (NSObject, Selector, Bool) -> Void
+            unsafeBitCast(imp, to: SetBool.self)(backend, syncSel, false)
+        }
+        return backend
     }()
 
     static func currentLevel() -> Int? {

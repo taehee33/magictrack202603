@@ -52,5 +52,14 @@ check(SwitchCoordinator.target(for: autoMagicLast) == .magicTrackpad, "자동: �
 check(SwitchCoordinator.target(for: S(mode: .auto, active: nil, hasInternal: false, hasMagic: false, lastTouched: nil)) == nil, "연결된 패드 없음 → nil")
 check(SwitchMode.auto.next == .lockInternal && SwitchMode.lockInternal.next == .lockMagic && SwitchMode.lockMagic.next == .auto, "⌥M 순환 순서")
 
+// MARK: - SpeedScale (시스템 설정 칸과 동일)
+
+check(SpeedScale.trackingStops.count == 10 && SpeedScale.scrollStops.count == 8, "칸 수: 이동 10, 스크롤 8")
+check(SpeedScale.trackingValue(stop: 1) == 0 && SpeedScale.trackingValue(stop: 7) == 1.5 && SpeedScale.trackingValue(stop: 10) == 3, "이동 칸 → 시스템 값")
+check(SpeedScale.trackingStop(forSystemValue: 1.5147) == 7, "현재 매직 값 1.5147 → 7칸")
+check(SpeedScale.trackingStop(forSystemValue: 5.0 * 0.3) == 7, "기존 앱 5 → 7칸 (시스템 가운데 아님)")
+check(SpeedScale.scrollValue(stop: 5) == 0.5 && SpeedScale.scrollStop(forSystemValue: 0.5) == 5, "스크롤 0.5 ↔ 5칸")
+check(SpeedScale.trackingValue(stop: 0) == 0 && SpeedScale.trackingValue(stop: 99) == 3, "범위 밖 칸은 양 끝으로")
+
 print(failures == 0 ? "\n모든 테스트 통과" : "\n실패 \(failures)건")
 exit(failures == 0 ? 0 : 1)

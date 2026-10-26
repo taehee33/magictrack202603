@@ -126,10 +126,12 @@ final class TrackpadManager: ObservableObject {
     // MARK: - 모니터링 시작
 
     func startMonitoring() {
-        TrackpadDevice.ensureMacDefaultsCaptured()
+        SpeedScale.migrateStoredValuesIfNeeded(migratePresets: PresetManager.migrateSavedPresetSpeeds)
 
-        // IOHIDSystem 연결
+        // IOHIDSystem 연결 후, 덮어쓰기 전에 시스템 원래 값을 기억 (종료 시 되돌림)
         _ = sensitivityController.openIOHIDSystem()
+        sensitivityController.beginOverride()
+        TrackpadDevice.ensureMacDefaultsCaptured()
 
         // HID Manager 생성
         hidManager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
@@ -192,6 +194,7 @@ final class TrackpadManager: ObservableObject {
         }
         touchMonitor.stop()
         RotationEngine.shared.stop()
+        sensitivityController.endOverride()
         sensitivityController.closeIOHIDSystem()
         print("🔴 TrackpadManager 모니터링 종료")
     }

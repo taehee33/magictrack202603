@@ -71,7 +71,7 @@ struct TrackpadCardView: View {
                         .foregroundStyle(accentColor)
                         .lineLimit(1)
                 } else {
-                    Text(String(format: "%.1f", device.trackingSpeed))
+                    Text(String(format: "%.0f", device.trackingSpeed))
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(accentColor)
                 }
@@ -142,7 +142,8 @@ struct TrackpadCardView: View {
                                         onSettingChange()
                                     }
                                 ),
-                                range: TrackpadDevice.speedRange,
+                                range: TrackpadDevice.trackingRange,
+                                step: 1,
                                 accentColor: accentColor,
                                 onChange: { _ in }
                             )
@@ -164,7 +165,8 @@ struct TrackpadCardView: View {
                                         onSettingChange()
                                     }
                                 ),
-                                range: TrackpadDevice.speedRange,
+                                range: TrackpadDevice.scrollRange,
+                                step: 1,
                                 accentColor: accentColor,
                                 onChange: { _ in }
                             )
