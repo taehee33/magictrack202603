@@ -43,7 +43,7 @@ struct TrackpadPreset: Codable, Identifiable, Equatable {
         self.magicRotation = magicRotation
     }
 
-    // 빌트인 기본 프리셋. "일반" = 기본값(5,5,보통), 첫 구동 시 적용됨
+    // 빌트인 기본 프리셋. "일반" = 기본값(5,5,보통)
     static let defaultPresets: [TrackpadPreset] = [
         TrackpadPreset(
             name: "일반",
@@ -141,12 +141,6 @@ final class PresetManager: ObservableObject {
 
     // MARK: - 활성 프리셋 적용
 
-    /// 저장된 값이 예전 0~3 스케일이면 0~10으로 변환
-    private static func toCurrentSpeedScale(_ value: Double) -> Double {
-        if value > 3.0 { return min(max(value, 0), 10) }
-        return (value / 3.0 * 10.0).clamped(to: 0...10)
-    }
-
     func activatePreset(_ preset: TrackpadPreset) {
         activePresetID = preset.id
         UserDefaults.standard.set(preset.id.uuidString, forKey: activePresetKey)
@@ -154,20 +148,21 @@ final class PresetManager: ObservableObject {
         let manager = TrackpadManager.shared
 
         if let internal_ = manager.internalTrackpad {
-            internal_.trackingSpeed = Self.toCurrentSpeedScale(preset.internalTrackingSpeed)
-            internal_.scrollSpeed = Self.toCurrentSpeedScale(preset.internalScrollSpeed)
+            internal_.trackingSpeed = preset.internalTrackingSpeed
+            internal_.scrollSpeed = preset.internalScrollSpeed
             internal_.clickPressure = preset.internalClickPressure
             manager.applySettings(for: internal_)
         }
 
         if let magic = manager.magicTrackpad {
-            magic.trackingSpeed = Self.toCurrentSpeedScale(preset.magicTrackingSpeed)
-            magic.scrollSpeed = Self.toCurrentSpeedScale(preset.magicScrollSpeed)
+            magic.trackingSpeed = preset.magicTrackingSpeed
+            magic.scrollSpeed = preset.magicScrollSpeed
             magic.clickPressure = preset.magicClickPressure
             magic.rotation = preset.magicRotation
             manager.applySettings(for: magic)
         }
 
+        manager.reapplyActiveProfile()
         print("✅ 프리셋 적용: \(preset.emoji) \(preset.name)")
     }
 
@@ -200,53 +195,6 @@ final class PresetManager: ObservableObject {
     /// 빌트인 프리셋 표시 순서 (일반 = 기본이 먼저). 저장된 목록을 이 순서로 재정렬
     private static let defaultPresetOrder: [String] = ["일반", "코딩", "디자인", "게임"]
 
-    /// 저장된 프리셋이 예전 0~3 스케일이면 0~10으로 변환
-    private static func migratePresetSpeedsToNewScale(_ list: [TrackpadPreset]) -> [TrackpadPreset] {
-        list.map { p in
-            let needsMigrate = p.internalTrackingSpeed <= 3.0 || p.internalScrollSpeed <= 3.0
-                || p.magicTrackingSpeed <= 3.0 || p.magicScrollSpeed <= 3.0
-            guard needsMigrate else { return p }
-            return TrackpadPreset(
-                id: p.id,
-                name: p.name,
-                emoji: p.emoji,
-                internalTrackingSpeed: (p.internalTrackingSpeed / 3.0 * 10.0).clamped(to: 0...10),
-                internalScrollSpeed: (p.internalScrollSpeed / 3.0 * 10.0).clamped(to: 0...10),
-                internalClickPressure: p.internalClickPressure,
-                magicTrackingSpeed: (p.magicTrackingSpeed / 3.0 * 10.0).clamped(to: 0...10),
-                magicScrollSpeed: (p.magicScrollSpeed / 3.0 * 10.0).clamped(to: 0...10),
-                magicClickPressure: p.magicClickPressure,
-                magicRotation: p.magicRotation
-            )
-        }
-    }
-
-    /// "일반" 프리셋은 항상 기본값(5, 5, 보통)으로 고정. 8.3 등 잘못 저장된 값 수정
-    private static func normalizeGeneralPreset(_ list: [TrackpadPreset]) -> [TrackpadPreset] {
-        list.map { p in
-            guard p.name == "일반" else { return p }
-            let def = TrackpadDevice.defaultSpeed
-            let defPressure = 1
-            if p.internalTrackingSpeed == def && p.internalScrollSpeed == def
-                && p.magicTrackingSpeed == def && p.magicScrollSpeed == def
-                && p.internalClickPressure == defPressure && p.magicClickPressure == defPressure {
-                return p
-            }
-            return TrackpadPreset(
-                id: p.id,
-                name: p.name,
-                emoji: p.emoji,
-                internalTrackingSpeed: def,
-                internalScrollSpeed: def,
-                internalClickPressure: defPressure,
-                magicTrackingSpeed: def,
-                magicScrollSpeed: def,
-                magicClickPressure: defPressure,
-                magicRotation: .standard
-            )
-        }
-    }
-
     private static func reorderPresets(_ list: [TrackpadPreset]) -> [TrackpadPreset] {
         var ordered: [TrackpadPreset] = []
         for name in defaultPresetOrder {
@@ -259,22 +207,17 @@ final class PresetManager: ObservableObject {
     }
 
     private func loadPresets() {
-        var didMigrateOrReorder = false
+        // v1.1.0까지 있던 스케일 변환·'일반' 강제 복원은 사용자 값을 덮어써서 제거. 표시 순서만 정리한다.
         if let data = UserDefaults.standard.data(forKey: presetsKey),
            let saved = try? JSONDecoder().decode([TrackpadPreset].self, from: data) {
-            var list = Self.migratePresetSpeedsToNewScale(saved)
-            list = Self.normalizeGeneralPreset(list)
-            list = Self.reorderPresets(list)
-            presets = list
-            didMigrateOrReorder = (list != saved)
-            if didMigrateOrReorder { savePresets() }
+            presets = Self.reorderPresets(saved)
+            if presets != saved { savePresets() }
         } else {
-            // 최초 실행: 기본 프리셋 로드
+            // 최초 실행: 기본 프리셋 목록만 만든다. 사용자의 현재 macOS 설정은 바꾸지 않는다.
             presets = TrackpadPreset.defaultPresets
             savePresets()
         }
 
-        let hadSavedActiveID = UserDefaults.standard.string(forKey: activePresetKey) != nil
         if let idStr = UserDefaults.standard.string(forKey: activePresetKey),
            let id = UUID(uuidString: idStr),
            presets.contains(where: { $0.id == id }) {
@@ -282,36 +225,6 @@ final class PresetManager: ObservableObject {
         } else {
             activePresetID = presets.first?.id
             UserDefaults.standard.set(activePresetID?.uuidString, forKey: activePresetKey)
-            if !hadSavedActiveID, let preset = activePreset {
-                DispatchQueue.main.async { [weak self] in
-                    self?.applyPresetToDevices(preset)
-                }
-            }
         }
-        // 스케일 마이그레이션 후 활성 프리셋 다시 적용 → 트랙패드 화면에 5로 표시
-        if didMigrateOrReorder, let preset = activePreset {
-            DispatchQueue.main.async { [weak self] in
-                self?.activatePreset(preset)
-            }
-        }
-    }
-
-    /// 디바이스에만 적용 (활성 ID 저장 없이). 최초 구동 시 사용
-    private func applyPresetToDevices(_ preset: TrackpadPreset) {
-        let manager = TrackpadManager.shared
-        if let internal_ = manager.internalTrackpad {
-            internal_.trackingSpeed = Self.toCurrentSpeedScale(preset.internalTrackingSpeed)
-            internal_.scrollSpeed = Self.toCurrentSpeedScale(preset.internalScrollSpeed)
-            internal_.clickPressure = preset.internalClickPressure
-            manager.applySettings(for: internal_)
-        }
-        if let magic = manager.magicTrackpad {
-            magic.trackingSpeed = Self.toCurrentSpeedScale(preset.magicTrackingSpeed)
-            magic.scrollSpeed = Self.toCurrentSpeedScale(preset.magicScrollSpeed)
-            magic.clickPressure = preset.magicClickPressure
-            magic.rotation = preset.magicRotation
-            manager.applySettings(for: magic)
-        }
-        print("✅ 최초 구동: 기본 프리셋 적용")
     }
 }

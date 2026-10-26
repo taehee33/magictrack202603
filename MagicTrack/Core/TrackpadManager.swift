@@ -60,13 +60,13 @@ final class TrackpadManager: ObservableObject {
     /// 논리 기기당 하나만 유지 (같은 기기가 여러 HID 인터페이스로 올 수 있음)
     private var bluetoothDevicesByKey: [String: BluetoothHIDDevice] = [:]
     private var refToKey: [UInt: String] = [:]
+    private var magicTrackpadKey: String?
     private var keyToRefs: [String: Set<UInt>] = [:]
-    private var monitoredInputRefs: [UInt: TrackpadType] = [:]
-    private var inputReportBuffers: [UInt: UnsafeMutablePointer<UInt8>] = [:]
-    private var inputReportLengths: [UInt: CFIndex] = [:]
-    private let activeSwitchCooldown: TimeInterval = 0.15
-    private let automaticActivationEnabled = false
     private let preferredBluetoothKey = "preferred_bluetooth_trackpad_key"
+    /// 사용자가 마지막으로 직접 고른 트랙패드. 앱 재실행·장치 재연결 시 이 프로필을 다시 적용한다
+    private let preferredActiveKey = "active_trackpad_type"
+    /// 시작 시 기존 장치를 훑는 동안에는 장치마다 프로필을 바꾸지 않고, 다 찾은 뒤 한 번만 적용한다
+    private var isScanningExistingDevices = false
 
     private init() {}
 
@@ -82,6 +82,8 @@ final class TrackpadManager: ObservableObject {
         objectWillChange.send()
         if key == nil {
             magicTrackpad = nil
+            magicTrackpadKey = nil
+            restoreActiveTrackpad(source: "select")
             return
         }
         // 선택한 기기가 이미 연결돼 있으면 즉시 매직 트랙패드로 적용
@@ -93,23 +95,23 @@ final class TrackpadManager: ObservableObject {
         guard let manager = hidManager, let preferredKey = preferredBluetoothDeviceKey else { return }
         guard let info = bluetoothDevicesByKey[preferredKey], info.kind == .trackpad else {
             magicTrackpad = nil
+            magicTrackpadKey = nil
+            restoreActiveTrackpad(source: "select")
             return
         }
         let devices = IOHIDManagerCopyDevices(manager) as? Set<IOHIDDevice> ?? []
         for device in devices {
-            let transport = property(device, key: kIOHIDTransportKey) ?? ""
-            guard transport.lowercased().contains("bluetooth") else { continue }
-            let productName = property(device, key: kIOHIDProductKey) ?? ""
-            let vendorID = intProperty(device, key: kIOHIDVendorIDKey)
-            let productID = intProperty(device, key: kIOHIDProductIDKey)
-            let serialNumber = property(device, key: kIOHIDSerialNumberKey) ?? ""
-            let key = BluetoothHIDDevice.deviceKey(name: productName, vendorID: vendorID, productID: productID, serialNumber: serialNumber)
-            guard key == preferredKey, isMagicTrackpad(productID: productID, productName: productName) else { continue }
-            let td = TrackpadDevice(hidDevice: device, type: .magicTrackpad, productName: productName, vendorID: vendorID, productID: productID, serialNumber: serialNumber)
-            magicTrackpad = td
+            let d = HIDDeviceSnapshot(device: device)
+            let kind = DeviceClassifier.classify(d)
+            guard kind == .magicTrackpad || kind == .otherTrackpad else { continue }
+            guard Self.deviceKey(for: d) == preferredKey else { continue }
+            magicTrackpadKey = preferredKey
+            magicTrackpad = TrackpadDevice(hidDevice: device, type: .magicTrackpad, productName: d.productName, vendorID: d.vendorID, productID: d.productID, serialNumber: d.serialNumber)
+            restoreActiveTrackpad(source: "select")
             return
         }
         magicTrackpad = nil
+        magicTrackpadKey = nil
     }
 
     // MARK: - 모니터링 시작
@@ -124,7 +126,7 @@ final class TrackpadManager: ObservableObject {
         hidManager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
         guard let manager = hidManager else { return }
 
-        // 트랙패드·마우스 매칭: Digitizer/TouchPad, GenericDesktop/Mouse, GenericDesktop/Pointer(일부 마우스), Apple 벤더
+        // 트랙패드·마우스 매칭: Digitizer/TouchPad, GenericDesktop/Mouse, GenericDesktop/Pointer(일부 마우스)
         let matchingDicts: [[String: Any]] = [
             [
                 kIOHIDDeviceUsagePageKey: kHIDPage_Digitizer,
@@ -136,10 +138,7 @@ final class TrackpadManager: ObservableObject {
             ],
             [
                 kIOHIDDeviceUsagePageKey: kHIDPage_GenericDesktop,
-                kIOHIDDeviceUsageKey:     0x01  // Pointer — MX Master 등 일부 마우스
-            ],
-            [
-                kIOHIDVendorIDKey: 0x05AC  // Apple Inc.
+                kIOHIDDeviceUsageKey:     kHIDUsage_GD_Pointer  // MX Master 등 일부 마우스
             ]
         ]
         IOHIDManagerSetDeviceMatchingMultiple(manager, matchingDicts as CFArray)
@@ -166,18 +165,19 @@ final class TrackpadManager: ObservableObject {
         IOHIDManagerRegisterDeviceMatchingCallback(manager, matchCallback, selfPtr)
         IOHIDManagerRegisterDeviceRemovalCallback(manager, removeCallback, selfPtr)
 
+        // 장치 목록·연결 알림만 쓰고 입력은 읽지 않으므로 IOHIDManagerOpen을 호출하지 않는다 (입력 모니터링 권한 불필요)
         IOHIDManagerScheduleWithRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
-        IOHIDManagerOpen(manager, IOOptionBits(kIOHIDOptionsTypeNone))
 
-        // 현재 연결된 디바이스 스캔 (시작 시 기존 연결 감지)
+        // 현재 연결된 디바이스 스캔 후 마지막으로 쓰던 프로필 적용
         scanExistingDevices()
-        updateFallbackActiveTrackpad()
+        restoreActiveTrackpad(source: "launch")
         print("🟢 TrackpadManager 모니터링 시작")
     }
 
     func stopMonitoring() {
         if let manager = hidManager {
-            IOHIDManagerClose(manager, IOOptionBits(kIOHIDOptionsTypeNone))
+            IOHIDManagerUnscheduleFromRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
+            hidManager = nil
         }
         sensitivityController.closeIOHIDSystem()
         print("🔴 TrackpadManager 모니터링 종료")
@@ -188,109 +188,71 @@ final class TrackpadManager: ObservableObject {
     private func scanExistingDevices() {
         guard let manager = hidManager else { return }
         let devices = IOHIDManagerCopyDevices(manager) as? Set<IOHIDDevice> ?? []
+        isScanningExistingDevices = true
         for device in devices {
             deviceConnected(device)
         }
+        isScanningExistingDevices = false
     }
 
     // MARK: - 디바이스 연결/해제 핸들링
 
     private func deviceConnected(_ device: IOHIDDevice) {
-        let transport = property(device, key: kIOHIDTransportKey) ?? ""
-        let productName = property(device, key: kIOHIDProductKey) ?? "Unknown"
-        let vendorID = intProperty(device, key: kIOHIDVendorIDKey)
-        let productID = intProperty(device, key: kIOHIDProductIDKey)
-        let serialNumber = property(device, key: kIOHIDSerialNumberKey) ?? ""
-        let usagePage = intProperty(device, key: kIOHIDDeviceUsagePageKey)
-        let usage = intProperty(device, key: kIOHIDDeviceUsageKey)
+        let d = HIDDeviceSnapshot(device: device)
+        let kind = DeviceClassifier.classify(d)
+        let pairs = d.usagePairs.map { "\($0.page)/\($0.usage)" }.joined(separator: ",")
+        print("🔌 HID 디바이스: \(d.productName) | transport=\(d.transport) | VID=\(String(d.vendorID, radix: 16)) PID=\(String(d.productID, radix: 16)) | builtIn=\(d.isBuiltIn) | usage=\(pairs) → \(kind)")
 
-        // 디버그: 매칭된 모든 HID 디바이스 로그 (블루투스 매직 트랙패드 확인용)
-        print("🔌 HID 디바이스: \(productName) | transport=\(transport) | VID=\(String(vendorID, radix: 16)) PID=\(String(productID, radix: 16)) | usage=\(usagePage)/\(usage)")
-
-        let normalizedTransport = transport.lowercased()
-        let isInternal = ["spi", "usb", "built-in", "fifo"].contains(normalizedTransport)
-        let isBluetooth = transport.lowercased().contains("bluetooth")
-        let deviceIsMagicFamily = isMagicTrackpad(productID: productID, productName: productName)
-
-        if isInternal {
-            guard isTrackpad(device) else { print("   ⏭️ 내장은 트랙패드만 등록"); return }
-            registerInputMonitoring(for: device, type: .internal)
-            appendInputLog(source: "connect", type: .internal, deviceName: productName, detail: "transport=\(transport) usage=\(usagePage)/\(usage)")
+        switch kind {
+        case .ignored:
+            return
+        case .internalTrackpad:
+            appendInputLog(source: "connect", type: .internal, deviceName: d.productName, detail: "transport=\(d.transport) usage=\(pairs)")
             if internalTrackpad == nil {
-                print("   ✅ 내장 트랙패드로 등록")
-                let td = TrackpadDevice(
-                    hidDevice: device,
-                    type: .internal,
-                    productName: productName,
-                    vendorID: vendorID,
-                    productID: productID,
-                    serialNumber: serialNumber
-                )
-                internalTrackpad = td
+                internalTrackpad = TrackpadDevice(hidDevice: device, type: .internal, productName: d.productName, vendorID: d.vendorID, productID: d.productID, serialNumber: d.serialNumber)
+                restoreActiveTrackpad(source: "connect")
             }
-            updateFallbackActiveTrackpad()
             return
+        case .magicTrackpad, .otherTrackpad, .mouse:
+            break
         }
 
-        guard isBluetooth else { return }
-
-        // 블루투스: 트랙패드 또는 마우스면 목록에 추가 (트랙패드/마우스 구분 표시용)
-        let isTrackpadDevice = isTrackpad(device)
-        let isMouseDevice = isMouse(device)
-        guard isTrackpadDevice || isMouseDevice || deviceIsMagicFamily else {
-            print("   ⏭️ 블루투스 포인팅 디바이스 아님")
-            return
-        }
-        if deviceIsMagicFamily {
-            appendInputLog(source: "connect", type: .magicTrackpad, deviceName: productName, detail: "transport=\(transport) usage=\(usagePage)/\(usage)")
-        }
-
+        // 외장 장치: 선택 목록에 추가 (같은 기기의 여러 HID 인터페이스는 하나로 묶음)
         let deviceRef = deviceRefValue(device)
-        let key = BluetoothHIDDevice.deviceKey(name: productName, vendorID: vendorID, productID: productID, serialNumber: serialNumber)
-        let kind: BluetoothDeviceKind = (isTrackpadDevice || deviceIsMagicFamily) ? .trackpad : .mouse
-        let info = BluetoothHIDDevice(id: key, name: productName, vendorID: vendorID, productID: productID, serialNumber: serialNumber, deviceRef: deviceRef, kind: kind)
+        let key = Self.deviceKey(for: d)
+        let listKind: BluetoothDeviceKind = kind == .mouse ? .mouse : .trackpad
+        let info = BluetoothHIDDevice(id: key, name: d.productName, vendorID: d.vendorID, productID: d.productID, serialNumber: d.serialNumber, deviceRef: deviceRef, kind: listKind)
         refToKey[deviceRef] = key
-        if keyToRefs[key] == nil { keyToRefs[key] = [] }
-        keyToRefs[key]?.insert(deviceRef)
+        keyToRefs[key, default: []].insert(deviceRef)
         bluetoothDevicesByKey[key] = info
         availableBluetoothDevices = Array(bluetoothDevicesByKey.values)
 
-        if deviceIsMagicFamily {
-            let preferred = preferredBluetoothDeviceKey
-            let useThis = preferred == nil || preferred == key
-            registerInputMonitoring(for: device, type: .magicTrackpad)
-            if useThis {
-                print("   ✅ 매직 트랙패드로 등록: \(productName)")
-                let td = TrackpadDevice(
-                    hidDevice: device,
-                    type: .magicTrackpad,
-                    productName: productName,
-                    vendorID: vendorID,
-                    productID: productID,
-                    serialNumber: serialNumber
-                )
-                magicTrackpad = td
-                updateFallbackActiveTrackpad()
-            } else {
-                print("   ⏭️ 블루투스 트랙패드 목록에만 추가 (선택된 기기 아님): \(productName)")
-            }
-        } else if isMouseDevice {
-            print("   📋 블루투스 마우스 목록에 추가: \(productName)")
-        }
+        guard kind != .mouse else { return }
+        appendInputLog(source: "connect", type: .magicTrackpad, deviceName: d.productName, detail: "transport=\(d.transport) usage=\(pairs)")
+
+        // 매직 트랙패드 슬롯: 사용자가 고른 기기, 없으면 처음 발견한 매직 트랙패드
+        let preferred = preferredBluetoothDeviceKey
+        let useThis = preferred == key || (preferred == nil && kind == .magicTrackpad)
+        guard useThis, magicTrackpadKey != key || magicTrackpad == nil else { return }
+        print("   ✅ 매직 트랙패드로 등록: \(d.productName)")
+        magicTrackpadKey = key
+        magicTrackpad = TrackpadDevice(hidDevice: device, type: .magicTrackpad, productName: d.productName, vendorID: d.vendorID, productID: d.productID, serialNumber: d.serialNumber)
+        restoreActiveTrackpad(source: "connect")
     }
 
     private func deviceDisconnected(_ device: IOHIDDevice) {
         let ref = deviceRefValue(device)
-        monitoredInputRefs.removeValue(forKey: ref)
-        if let reportBuffer = inputReportBuffers.removeValue(forKey: ref) {
-            reportBuffer.deallocate()
-        }
-        inputReportLengths.removeValue(forKey: ref)
         if let key = refToKey.removeValue(forKey: ref) {
             keyToRefs[key]?.remove(ref)
             if keyToRefs[key]?.isEmpty == true {
                 keyToRefs.removeValue(forKey: key)
                 bluetoothDevicesByKey.removeValue(forKey: key)
+                if key == magicTrackpadKey, magicTrackpad != nil {
+                    magicTrackpad = nil
+                    magicTrackpadKey = nil
+                    appendInputLog(source: "disconnect", type: .magicTrackpad, deviceName: property(device, key: kIOHIDProductKey) ?? "Unknown", detail: "")
+                    print("❌ 매직 트랙패드 연결 해제")
+                }
             }
             availableBluetoothDevices = Array(bluetoothDevicesByKey.values)
         }
@@ -300,12 +262,11 @@ final class TrackpadManager: ObservableObject {
             appendInputLog(source: "disconnect", type: .internal, deviceName: property(device, key: kIOHIDProductKey) ?? "Unknown", detail: "")
             print("❌ 내장 트랙패드 연결 해제")
         }
-        if magicTrackpad?.hidDevice == device {
-            magicTrackpad = nil
-            appendInputLog(source: "disconnect", type: .magicTrackpad, deviceName: property(device, key: kIOHIDProductKey) ?? "Unknown", detail: "")
-            print("❌ 매직 트랙패드 연결 해제")
-        }
-        updateFallbackActiveTrackpad()
+        restoreActiveTrackpad(source: "disconnect")
+    }
+
+    private static func deviceKey(for d: HIDDeviceSnapshot) -> String {
+        BluetoothHIDDevice.deviceKey(name: d.productName, vendorID: d.vendorID, productID: d.productID, serialNumber: d.serialNumber)
     }
 
     private func deviceRefValue(_ device: IOHIDDevice) -> UInt {
@@ -315,14 +276,25 @@ final class TrackpadManager: ObservableObject {
     // MARK: - 감도 적용
 
     /// 트랙패드 설정을 IOKit에 실제로 적용
+    /// 장치 설정을 저장하고, 그 장치가 지금 적용 중인 프로필이면 시스템에 바로 반영
     func applySettings(for device: TrackpadDevice) {
-        sensitivityController.setClickPressure(device.clickPressure, for: device.type)
         device.saveSettings()
-        applyActiveProfileIfNeeded(for: device.type)
+        if activeTrackpadType == device.type {
+            applyProfile(for: device.type)
+        }
+    }
+
+    /// 프리셋 적용 등으로 값이 바뀐 뒤 현재 활성 프로필을 다시 적용
+    func reapplyActiveProfile() {
+        guard let type = activeTrackpadType else {
+            restoreActiveTrackpad(source: "reapply")
+            return
+        }
+        applyProfile(for: type)
     }
 
     func activateProfileManually(for type: TrackpadType) {
-        activateTrackpad(type, source: "manual", force: true)
+        activateTrackpad(type, source: "manual", force: true, persist: true)
     }
 
     func toggleSelectedTrackpad() {
@@ -377,150 +349,51 @@ final class TrackpadManager: ObservableObject {
         }
     }
 
-    // MARK: - 활성 장치 기반 스위칭
+    // MARK: - 활성 장치 전환
 
-    private func registerInputMonitoring(for device: IOHIDDevice, type: TrackpadType) {
-        let ref = deviceRefValue(device)
-        guard monitoredInputRefs[ref] == nil else { return }
-        monitoredInputRefs[ref] = type
-        let productName = property(device, key: kIOHIDProductKey) ?? "Unknown"
-        IOHIDDeviceRegisterInputValueCallback(device, { context, _, sender, value in
-            guard let context, let sender else { return }
-            let manager = Unmanaged<TrackpadManager>.fromOpaque(context).takeUnretainedValue()
-            let hidDevice = unsafeBitCast(sender, to: IOHIDDevice.self)
-            manager.handleInputValue(from: hidDevice, value: value)
-        }, Unmanaged.passUnretained(self).toOpaque())
-
-        let maxReportSize = max(
-            64,
-            (IOHIDDeviceGetProperty(device, kIOHIDMaxInputReportSizeKey as CFString) as? NSNumber)?.intValue ?? 0
-        )
-        let reportBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: maxReportSize)
-        inputReportBuffers[ref] = reportBuffer
-        inputReportLengths[ref] = CFIndex(maxReportSize)
-        IOHIDDeviceRegisterInputReportCallback(
-            device,
-            reportBuffer,
-            CFIndex(maxReportSize),
-            { context, _, sender, _, _, _, reportLength in
-                guard let context, let sender else { return }
-                let manager = Unmanaged<TrackpadManager>.fromOpaque(context).takeUnretainedValue()
-                let hidDevice = unsafeBitCast(sender, to: IOHIDDevice.self)
-                manager.handleInputReport(from: hidDevice, reportLength: reportLength)
-            },
-            Unmanaged.passUnretained(self).toOpaque()
-        )
-        IOHIDDeviceScheduleWithRunLoop(device, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
-        _ = IOHIDDeviceOpen(device, IOOptionBits(kIOHIDOptionsTypeNone))
-        appendInputLog(source: "monitor", type: type, deviceName: productName, detail: "ref=\(ref)")
-        print("🎧 입력 감시 등록: \(productName) [\(type.displayName)]")
-    }
-
-    private func handleInputValue(from device: IOHIDDevice, value: IOHIDValue) {
-        let ref = deviceRefValue(device)
-        guard let type = monitoredInputRefs[ref] else { return }
-        guard isMeaningfulInput(value) else { return }
-        let element = IOHIDValueGetElement(value)
-        let usagePage = IOHIDElementGetUsagePage(element)
-        let usage = IOHIDElementGetUsage(element)
-        let intValue = IOHIDValueGetIntegerValue(value)
-        appendInputLog(
-            source: "value",
-            type: type,
-            deviceName: property(device, key: kIOHIDProductKey) ?? "Unknown",
-            detail: "ref=\(ref) usage=\(usagePage)/\(usage) value=\(intValue)"
-        )
-        guard automaticActivationEnabled else { return }
-        DispatchQueue.main.async { [weak self] in
-            self?.activateTrackpad(type, source: "input")
+    /// - persist: 사용자가 직접 고른 경우에만 true. 재실행·재연결 시 이 선택을 다시 적용한다
+    private func activateTrackpad(_ type: TrackpadType, source: String, force: Bool = false, persist: Bool = false) {
+        if persist {
+            UserDefaults.standard.set(type.rawValue, forKey: preferredActiveKey)
         }
-    }
-
-    private func handleInputReport(from device: IOHIDDevice, reportLength: CFIndex) {
-        let ref = deviceRefValue(device)
-        guard let type = monitoredInputRefs[ref] else { return }
-        guard reportLength > 0 else { return }
-        appendInputLog(
-            source: "report",
-            type: type,
-            deviceName: property(device, key: kIOHIDProductKey) ?? "Unknown",
-            detail: "ref=\(ref) len=\(reportLength)"
-        )
-        guard automaticActivationEnabled else { return }
-        DispatchQueue.main.async { [weak self] in
-            self?.activateTrackpad(type, source: "report")
-        }
-    }
-
-    private func isMeaningfulInput(_ value: IOHIDValue) -> Bool {
-        let element = IOHIDValueGetElement(value)
-        let integerValue = IOHIDValueGetIntegerValue(value)
-        guard integerValue != 0 else { return false }
-
-        let usagePage = IOHIDElementGetUsagePage(element)
-        let usage = IOHIDElementGetUsage(element)
-
-        if usagePage == kHIDPage_GenericDesktop {
-            return usage == kHIDUsage_GD_X
-                || usage == kHIDUsage_GD_Y
-                || usage == kHIDUsage_GD_Wheel
-        }
-
-        if usagePage == kHIDPage_Digitizer {
-            return true
-        }
-
-        return false
-    }
-
-    private func activateTrackpad(_ type: TrackpadType, source: String, force: Bool = false) {
-        let now = Date()
         if activeTrackpadType == type && !force {
             return
         }
-        if !force, let lastSwitch = lastActiveSwitchAt, now.timeIntervalSince(lastSwitch) < activeSwitchCooldown {
-            return
-        }
         activeTrackpadType = type
-        lastActiveSwitchAt = now
+        lastActiveSwitchAt = Date()
         appendInputLog(source: "activate", type: type, deviceName: device(for: type)?.productName ?? type.displayName, detail: "source=\(source)")
         applyProfile(for: type)
         print("🎯 활성 트랙패드 전환: \(type.displayName) source=\(source)")
     }
 
-    private func updateFallbackActiveTrackpad() {
-        guard automaticActivationEnabled else { return }
-        if activeTrackpadType == .internal, internalTrackpad == nil {
+    /// 연결 상태에 맞춰 적용할 프로필을 정한다.
+    /// 마지막으로 직접 고른 트랙패드가 연결돼 있으면 그것, 없으면 연결된 트랙패드(내장 우선)
+    private func restoreActiveTrackpad(source: String) {
+        guard !isScanningExistingDevices else { return }
+        let preferred = UserDefaults.standard.string(forKey: preferredActiveKey).flatMap(TrackpadType.init(rawValue:))
+        let target: TrackpadType?
+        if let preferred, device(for: preferred) != nil {
+            target = preferred
+        } else if internalTrackpad != nil {
+            target = .internal
+        } else if magicTrackpad != nil {
+            target = .magicTrackpad
+        } else {
+            target = nil
+        }
+        guard let target else {
             activeTrackpadType = nil
-        }
-        if activeTrackpadType == .magicTrackpad, magicTrackpad == nil {
-            activeTrackpadType = nil
-        }
-
-        if activeTrackpadType == nil {
-            if internalTrackpad != nil && magicTrackpad == nil {
-                activateTrackpad(.internal, source: "fallback")
-            } else if magicTrackpad != nil && internalTrackpad == nil {
-                activateTrackpad(.magicTrackpad, source: "fallback")
-            }
-        }
-    }
-
-    private func applyActiveProfileIfNeeded(for type: TrackpadType) {
-        if activeTrackpadType == nil {
-            guard automaticActivationEnabled else { return }
-            activateTrackpad(type, source: "settings")
             return
         }
-        guard activeTrackpadType == type else { return }
-        applyProfile(for: type)
+        // 실행 직후에는 같은 장치라도 반드시 한 번 적용
+        activateTrackpad(target, source: source, force: source == "launch" || source == "select")
     }
 
     private func applyProfile(for type: TrackpadType) {
         guard let device = device(for: type) else { return }
-        sensitivityController.setGlobalTrackpadTrackingSpeed(device.trackingSpeed)
-        sensitivityController.setGlobalTrackpadScrollSpeed(device.scrollSpeed)
-        sensitivityController.setClickPressure(device.clickPressure, for: type)
+        sensitivityController.setTrackingSpeed(device.trackingSpeed)
+        sensitivityController.setScrollSpeed(device.scrollSpeed)
+        sensitivityController.setClickPressure(device.clickPressure)
     }
 
     private func device(for type: TrackpadType) -> TrackpadDevice? {
@@ -563,46 +436,8 @@ final class TrackpadManager: ObservableObject {
 
     // MARK: - 헬퍼
 
-    private func isTrackpad(_ device: IOHIDDevice) -> Bool {
-        let usagePage = intProperty(device, key: kIOHIDDeviceUsagePageKey)
-        let usage = intProperty(device, key: kIOHIDDeviceUsageKey)
-        let productName = (property(device, key: kIOHIDProductKey) ?? "").lowercased()
-
-        // 1) HID Usage: Digitizer + TouchPad (일반 트랙패드)
-        let isDigitizer = usagePage == kHIDPage_Digitizer && usage == kHIDUsage_Dig_TouchPad
-        // 2) 블루투스/내장 일부 기기는 usage=0/0으로 올라오므로 이름으로 보완
-        let nameIsTrackpad = productName.contains("trackpad")
-            || productName.contains("track pad")
-            || productName.contains("internal keyboard / trackpad")
-
-        return isDigitizer || nameIsTrackpad
-    }
-
-    private func isMouse(_ device: IOHIDDevice) -> Bool {
-        let usagePage = intProperty(device, key: kIOHIDDeviceUsagePageKey)
-        let usage = intProperty(device, key: kIOHIDDeviceUsageKey)
-        let name = (property(device, key: kIOHIDProductKey) ?? "").lowercased()
-        // HID: Generic Desktop + Mouse(0x02) 또는 Pointer(0x01, 일부 마우스)
-        let usageMouse = usagePage == kHIDPage_GenericDesktop && (usage == kHIDUsage_GD_Mouse || usage == 0x01)
-        let nameMouse = name.contains("mouse") || name.contains("마우스") || name.contains("master") || name.contains("mx ")
-        return usageMouse || nameMouse
-    }
-
-    private func isMagicTrackpad(productID: Int, productName: String) -> Bool {
-        // 매직 트랙패드 1: 0x030E, 2: 0x0265, 3: 0x0274, 기타 Apple 트랙패드
-        let magicTrackpadProductIDs = [0x030E, 0x0265, 0x0274, 0x0255]
-        let name = productName.lowercased()
-        return magicTrackpadProductIDs.contains(productID)
-            || name.contains("magic trackpad")
-            || name.contains("magic track pad")
-            || name.contains("trackpad")
-    }
-
     private func property(_ device: IOHIDDevice, key: String) -> String? {
         IOHIDDeviceGetProperty(device, key as CFString) as? String
     }
 
-    private func intProperty(_ device: IOHIDDevice, key: String) -> Int {
-        (IOHIDDeviceGetProperty(device, key as CFString) as? Int) ?? 0
-    }
 }

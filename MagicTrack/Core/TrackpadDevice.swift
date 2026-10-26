@@ -93,37 +93,32 @@ final class TrackpadDevice: ObservableObject, Identifiable {
         self.serialNumber = serialNumber
         self.isConnected = (hidDevice != nil)
 
-        // 저장된 값 로드 (없으면 기본값). 이전 0~3 스케일은 0~10으로 마이그레이션
+        // 저장된 값 로드. 키가 없을 때만 기본값을 쓰고, 0도 정상 값으로 취급한다.
+        // (v1.1.0까지 있던 0~3 → 0~10 변환은 실행할 때마다 다시 돌아 값을 부풀렸으므로 제거)
         let key = "\(type.rawValue)_"
-        var rawTracking = UserDefaults.standard.double(forKey: key + "trackingSpeed")
-        var rawScroll = UserDefaults.standard.double(forKey: key + "scrollSpeed")
-        if rawTracking > 0 && rawTracking <= 3.0 { rawTracking = rawTracking / 3.0 * 10.0 }
-        if rawScroll > 0 && rawScroll <= 3.0 { rawScroll = rawScroll / 3.0 * 10.0 }
-        self.trackingSpeed = rawTracking.clamped(to: TrackpadDevice.speedRange)
-        self.scrollSpeed = rawScroll.clamped(to: TrackpadDevice.speedRange)
-        // 클릭 압력: 키가 없으면 기본값 보통(1). integer(forKey:)는 키 없을 때 0을 반환하므로 구분 필요
-        let clickKey = key + "clickPressure"
-        if UserDefaults.standard.object(forKey: clickKey) != nil {
-            self.clickPressure = min(max(UserDefaults.standard.integer(forKey: clickKey), 0), 2)
+        let defaults = UserDefaults.standard
+        if defaults.object(forKey: key + "trackingSpeed") != nil {
+            self.trackingSpeed = defaults.double(forKey: key + "trackingSpeed").clamped(to: TrackpadDevice.speedRange)
         } else {
-            self.clickPressure = 1  // 보통 = 기본값
+            self.trackingSpeed = TrackpadDevice.defaultTrackingSpeed(for: type)
         }
-        if let storedRotation = UserDefaults.standard.string(forKey: key + "rotation"),
+        if defaults.object(forKey: key + "scrollSpeed") != nil {
+            self.scrollSpeed = defaults.double(forKey: key + "scrollSpeed").clamped(to: TrackpadDevice.speedRange)
+        } else {
+            self.scrollSpeed = TrackpadDevice.defaultScrollSpeed(for: type)
+        }
+        // 클릭 압력: integer(forKey:)는 키 없을 때 0을 반환하므로 존재 여부로 구분
+        let clickKey = key + "clickPressure"
+        if defaults.object(forKey: clickKey) != nil {
+            self.clickPressure = defaults.integer(forKey: clickKey).clamped(to: 0...2)
+        } else {
+            self.clickPressure = TrackpadDevice.defaultClickPressure(for: type)
+        }
+        if let storedRotation = defaults.string(forKey: key + "rotation"),
            let rotation = TrackpadRotation(rawValue: storedRotation) {
             self.rotation = rotation
         } else {
             self.rotation = .standard
-        }
-
-        // 저장된 값이 없었으면 기본값 5
-        if UserDefaults.standard.object(forKey: key + "trackingSpeed") == nil || self.trackingSpeed == 0.0 {
-            self.trackingSpeed = TrackpadDevice.defaultTrackingSpeed(for: type)
-        }
-        if UserDefaults.standard.object(forKey: key + "scrollSpeed") == nil || self.scrollSpeed == 0.0 {
-            self.scrollSpeed = TrackpadDevice.defaultScrollSpeed(for: type)
-        }
-        if UserDefaults.standard.object(forKey: clickKey) == nil {
-            self.clickPressure = TrackpadDevice.defaultClickPressure(for: type)
         }
     }
 
@@ -176,11 +171,11 @@ final class TrackpadDevice: ObservableObject, Identifiable {
         )
         captureIfNeeded(
             key: macDefaultKey(for: .internal, suffix: "clickPressure"),
-            value: controller.getCurrentClickPressure(for: .internal)
+            value: controller.getCurrentClickPressure()
         )
         captureIfNeeded(
             key: macDefaultKey(for: .magicTrackpad, suffix: "clickPressure"),
-            value: controller.getCurrentClickPressure(for: .magicTrackpad)
+            value: controller.getCurrentClickPressure()
         )
     }
 

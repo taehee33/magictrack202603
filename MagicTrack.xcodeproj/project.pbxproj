@@ -11,6 +11,7 @@
 		2C634814273F44B79DB36CB2 /* MagicTrackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2869ACE5F4974877B8AF7AA7 /* MagicTrackApp.swift */; };
 		6E040DF3F6E44AD89042FA0E /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108312D0321249A9B1369F95 /* AppDelegate.swift */; };
 		DE4BF6B9A36740949D780984 /* TrackpadDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77C7E94D0E1D4532A9B3DDEB /* TrackpadDevice.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* DeviceClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* DeviceClassifier.swift */; };
 		7C7A3BE8D4494714909DB74C /* TrackpadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FC58C51A7045CD9F73A9A2 /* TrackpadManager.swift */; };
 		EDDFF6904BE845BE98FD8911 /* SensitivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41FBA1F7514C48DBAA76773D /* SensitivityController.swift */; };
 		267D3C14B98944849F641D7F /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710B191BCEEC468DAB30FC91 /* PermissionManager.swift */; };
@@ -33,6 +34,7 @@
 		2869ACE5F4974877B8AF7AA7 /* MagicTrackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MagicTrackApp.swift"; sourceTree = "<group>"; };
 		108312D0321249A9B1369F95 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate.swift"; sourceTree = "<group>"; };
 		77C7E94D0E1D4532A9B3DDEB /* TrackpadDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackpadDevice.swift"; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5D /* DeviceClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceClassifier.swift"; sourceTree = "<group>"; };
 		22FC58C51A7045CD9F73A9A2 /* TrackpadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackpadManager.swift"; sourceTree = "<group>"; };
 		41FBA1F7514C48DBAA76773D /* SensitivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SensitivityController.swift"; sourceTree = "<group>"; };
 		710B191BCEEC468DAB30FC91 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PermissionManager.swift"; sourceTree = "<group>"; };
@@ -98,6 +100,7 @@
 			isa = PBXGroup;
 			children = (
 				77C7E94D0E1D4532A9B3DDEB /* TrackpadDevice.swift */,
+				A1B2C3D4E5F60718293A4B5D /* DeviceClassifier.swift */,
 				22FC58C51A7045CD9F73A9A2 /* TrackpadManager.swift */,
 				41FBA1F7514C48DBAA76773D /* SensitivityController.swift */,
 				710B191BCEEC468DAB30FC91 /* PermissionManager.swift */,
@@ -273,6 +276,7 @@
 				2C634814273F44B79DB36CB2 /* MagicTrackApp.swift in Sources */,
 				6E040DF3F6E44AD89042FA0E /* AppDelegate.swift in Sources */,
 				DE4BF6B9A36740949D780984 /* TrackpadDevice.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* DeviceClassifier.swift in Sources */,
 				7C7A3BE8D4494714909DB74C /* TrackpadManager.swift in Sources */,
 				EDDFF6904BE845BE98FD8911 /* SensitivityController.swift in Sources */,
 				267D3C14B98944849F641D7F /* PermissionManager.swift in Sources */,

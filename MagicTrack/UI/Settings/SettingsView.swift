@@ -7,7 +7,6 @@ struct SettingsView: View {
     @EnvironmentObject var trackpadManager: TrackpadManager
     @EnvironmentObject var presetManager: PresetManager
     @EnvironmentObject var appSwitcherManager: AppSwitcherManager
-    @StateObject private var permissionManager = PermissionManager.shared
 
     @AppStorage("launchAtLogin") private var launchAtLogin = false
     @AppStorage(AppVisibilityManager.showDockIconKey) private var showDockIcon = true
@@ -87,28 +86,12 @@ struct SettingsView: View {
 
     private var permissionsSettings: some View {
         VStack(spacing: 16) {
-            PermissionRow(
-                icon: "keyboard",
-                title: "입력 모니터링",
-                description: "트랙패드 감도를 변경하려면 필요합니다",
-                isGranted: permissionManager.hasInputMonitoring
-            ) {
-                permissionManager.openPrivacySettings(section: "Privacy_InputMonitoring")
-            }
-
-            PermissionRow(
-                icon: "accessibility",
-                title: "손쉬운 사용",
-                description: "앱 자동전환 기능에 필요합니다 (선택 사항)",
-                isGranted: permissionManager.hasAccessibility
-            ) {
-                permissionManager.requestAccessibility()
-            }
-
-            Button("권한 상태 새로고침") {
-                permissionManager.checkPermissions()
-            }
-            .buttonStyle(.bordered)
+            Label("이 버전은 추가 권한 없이 동작해요", systemImage: "checkmark.shield")
+                .font(.headline)
+            Text("트랙패드 감도·스크롤·클릭 압력 적용과 앱 자동전환에는 입력 모니터링이나 손쉬운 사용 권한이 필요하지 않아요.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
         .padding()
     }

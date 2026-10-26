@@ -24,10 +24,10 @@ struct MagicTrackApp: App {
             // 기본 메뉴 제거
             CommandGroup(replacing: .newItem) {}
             CommandMenu("트랙패드") {
-                Button("내장/매직 전환") {
+                // ⌥M은 HotKeyManager의 전역 단축키가 처리한다. 여기에도 단축키를 걸면 앱이 앞에 있을 때 두 번 전환됨
+                Button("내장/매직 전환 (⌥M)") {
                     trackpadManager.toggleSelectedTrackpad()
                 }
-                .keyboardShortcut("m", modifiers: [.option])
             }
         }
 

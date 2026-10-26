@@ -2,46 +2,38 @@ import Foundation
 import IOKit
 import IOKit.hid
 import IOKit.hidsystem
-
-// 스크롤 가속 키 (일부 SDK에 kIOHIDScrollAccelerationType 없음 → 문자열 사용)
-private let kScrollAccelKey = "HIDScrollAcceleration" as CFString
+import ObjectiveC
 
 // MARK: - SensitivityController
-// IOKit을 통해 실제 트랙패드 감도를 읽고 쓰는 핵심 컨트롤러
+// 트랙패드 이동 속도·스크롤 속도·클릭 압력을 시스템에 즉시 적용하는 컨트롤러.
+// 셸(defaults) 실행 없이 IOKit / CFPreferences / 시스템 설정 백엔드를 직접 호출한다.
+//
+// 실측(macOS 27.0.1) 근거:
+// - 이동 속도: IOHIDSetAccelerationWithKey(HIDTrackpadAcceleration) 즉시 반영
+// - 스크롤: IOHIDSetAccelerationWithKey(HIDTrackpadScrollAcceleration) 트랙패드에만 즉시 반영 (마우스 영향 없음)
+// - 클릭 압력: defaults 기록은 반영 안 됨 → 시스템 설정 앱과 같은 MTTGestureBackEnd 사용 시 즉시 반영
 
 final class SensitivityController {
 
     static let shared = SensitivityController()
     private init() {}
 
-    // MARK: - IOHIDSystem Connection
-
     private var ioHIDSystemConnect: io_connect_t = 0
-    private var eventSystemClient: IOHIDEventSystemClient?
-    private var didLogServiceCandidates = false
 
     func openIOHIDSystem() -> Bool {
-        if eventSystemClient == nil {
-            eventSystemClient = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
-        }
-        let service = IOServiceGetMatchingService(
-            kIOMainPortDefault,
-            IOServiceMatching("IOHIDSystem")
-        )
+        guard ioHIDSystemConnect == 0 else { return true }
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOHIDSystem"))
         guard service != 0 else {
             print("❌ IOHIDSystem 서비스를 찾을 수 없습니다.")
             return false
         }
         let result = IOServiceOpen(service, mach_task_self_, UInt32(kIOHIDParamConnectType), &ioHIDSystemConnect)
         IOObjectRelease(service)
-
-        if result == kIOReturnSuccess {
-            print("✅ IOHIDSystem 연결 성공")
-            return true
-        } else {
+        if result != kIOReturnSuccess {
             print("❌ IOHIDSystem 연결 실패: \(result)")
             return false
         }
+        return true
     }
 
     func closeIOHIDSystem() {
@@ -49,299 +41,100 @@ final class SensitivityController {
             IOServiceClose(ioHIDSystemConnect)
             ioHIDSystemConnect = 0
         }
-        eventSystemClient = nil
     }
 
-    // MARK: - 감도 값 읽기 (현재 시스템 설정)
+    // MARK: - 단위 변환 (UI 0~10)
 
-    func getCurrentTrackingSpeed() -> Double {
-        // defaults read로 현재 값 확인 (더 안정적)
-        let result = shell("defaults read -g com.apple.trackpad.scaling")
-        return Double(result.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 1.0
-    }
-
-    func getCurrentScrollSpeed() -> Double {
-        let result = shell("defaults read -g com.apple.scrollwheel.scaling")
-        return Double(result.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0.3125
-    }
-
-    func getCurrentClickPressure(for type: TrackpadType) -> Int {
-        let domainKey: String
-        switch type {
-        case .internal:
-            domainKey = "com.apple.AppleMultitouchTrackpad"
-        case .magicTrackpad:
-            domainKey = "com.apple.driver.AppleBluetoothMultitouch.trackpad"
-        }
-
-        let result = shell("defaults read \(domainKey) FirstClickThreshold")
-        guard let value = Int(result.trimmingCharacters(in: .whitespacesAndNewlines)) else {
-            return 1
-        }
-        return min(max(value, 0), 2)
-    }
-
-    // MARK: - 내장 트랙패드 감도 설정
-
-    /// UI 값 0~10을 시스템 0~3으로 변환
+    /// UI 이동 속도 0~10 → 시스템 trackpad.scaling 0~3
     private func toSystemTracking(_ value: Double) -> Double {
         value.clamped(to: 0.0...10.0) / 10.0 * 3.0
     }
 
-    /// 내장 트랙패드 추적 속도 설정 (UI 0.0 ~ 10.0)
-    func setInternalTrackingSpeed(_ value: Double) {
-        setGlobalTrackpadTrackingSpeed(value)
-        print("✅ 내장 트랙패드 속도 설정(UI): \(value)")
+    /// UI 스크롤 속도 0~10 → 시스템 스크롤 가속 0~1
+    private func toSystemScroll(_ value: Double) -> Double {
+        value.clamped(to: 0.0...10.0) / 10.0
     }
 
-    /// 내장 트랙패드 스크롤 속도 설정 (UI 0.0 ~ 10.0)
-    func setInternalScrollSpeed(_ value: Double) {
-        setGlobalTrackpadScrollSpeed(value)
-        print("✅ 내장 스크롤 속도 설정(UI): \(value)")
+    // MARK: - 현재 시스템 값 읽기
+
+    func getCurrentTrackingSpeed() -> Double {
+        (CFPreferencesCopyValue(Self.trackingPrefKey, kCFPreferencesAnyApplication, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? NSNumber)?.doubleValue ?? 1.0
     }
 
-    /// 현재 활성 트랙패드 프로필에 반영할 전역 추적 속도 설정.
-    func setGlobalTrackpadTrackingSpeed(_ value: Double) {
+    /// 트랙패드 스크롤 가속 (0~1). 읽지 못하면 보통(0.5)
+    func getCurrentScrollSpeed() -> Double {
+        guard ioHIDSystemConnect != 0 || openIOHIDSystem() else { return 0.5 }
+        var value = 0.0
+        let result = IOHIDGetAccelerationWithKey(ioHIDSystemConnect, kIOHIDTrackpadScrollAccelerationKey as CFString, &value)
+        return result == kIOReturnSuccess ? value : 0.5
+    }
+
+    func getCurrentClickPressure() -> Int {
+        if let level = ClickPressureBackend.currentLevel() { return level.clamped(to: 0...2) }
+        let value = CFPreferencesCopyAppValue("FirstClickThreshold" as CFString, "com.apple.AppleMultitouchTrackpad" as CFString) as? NSNumber
+        return (value?.intValue ?? 1).clamped(to: 0...2)
+    }
+
+    // MARK: - 적용
+
+    /// 이동 속도 (UI 0~10). 즉시 반영 + 재부팅 후에도 유지되도록 전역 설정에도 기록
+    func setTrackingSpeed(_ value: Double) {
         let systemValue = toSystemTracking(value)
-
-        if ioHIDSystemConnect != 0 {
-            let valueRef = NSNumber(value: systemValue) as CFTypeRef
-            IOHIDSetAccelerationWithKey(
-                ioHIDSystemConnect,
-                kIOHIDTrackpadAccelerationType as CFString,
-                valueRef as! Double
-            )
+        if ioHIDSystemConnect != 0 || openIOHIDSystem() {
+            IOHIDSetAccelerationWithKey(ioHIDSystemConnect, kIOHIDTrackpadAccelerationType as CFString, systemValue)
         }
-
-        shell_void("defaults write -g com.apple.trackpad.scaling \(systemValue)")
-        print("✅ 전역 트랙패드 속도 설정: \(systemValue) (UI: \(value))")
+        CFPreferencesSetValue(Self.trackingPrefKey, NSNumber(value: systemValue), kCFPreferencesAnyApplication, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+        CFPreferencesSynchronize(kCFPreferencesAnyApplication, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
     }
 
-    /// 현재 활성 트랙패드 프로필에 반영할 전역 스크롤 속도 설정.
-    func setGlobalTrackpadScrollSpeed(_ value: Double) {
-        let systemValue = toSystemTracking(value)
-        let normalized = systemValue / 3.0
-        shell_void("defaults write -g com.apple.scrollwheel.scaling \(normalized)")
-
-        if ioHIDSystemConnect != 0 {
-            let valueRef = NSNumber(value: normalized) as CFTypeRef
-            IOHIDSetAccelerationWithKey(
-                ioHIDSystemConnect,
-                kScrollAccelKey,
-                valueRef as! Double
-            )
-        }
-        print("✅ 전역 스크롤 속도 설정: \(normalized) (UI: \(value))")
+    /// 트랙패드 스크롤 속도 (UI 0~10). 마우스 휠 설정(scrollwheel.scaling)은 건드리지 않는다
+    func setScrollSpeed(_ value: Double) {
+        guard ioHIDSystemConnect != 0 || openIOHIDSystem() else { return }
+        IOHIDSetAccelerationWithKey(ioHIDSystemConnect, kIOHIDTrackpadScrollAccelerationKey as CFString, toSystemScroll(value))
     }
 
-    // MARK: - 매직 트랙패드 감도 설정
-    // 전역(mouse.scaling / trackpad.scaling)을 쓰면 블루투스 마우스나 내장 트랙패드에 영향이 가므로,
-    // 매직 트랙패드에는 해당 HID 디바이스에만 IOHIDDeviceSetProperty로 설정. 전역은 건드리지 않음.
-
-    /// 매직 트랙패드 이동 속도: 해당 HID 디바이스에만 설정. mouse.scaling 미사용(블루투스 마우스 영향 방지).
-    func setMagicTrackpadSpeed(_ value: Double, device: IOHIDDevice?) {
-        let systemValue = toSystemTracking(value)
-        guard let device = device else {
-            print("⚠️ 매직 트랙패드 HID 없음 — 이동 속도 미적용")
-            return
-        }
-        let valueRef = NSNumber(value: systemValue) as CFTypeRef
-        let service = matchingService(for: device)
-        let servicePointerApplied = service.map {
-            IOHIDServiceClientSetProperty($0, kIOHIDPointerAccelerationKey as CFString, valueRef)
-        } ?? false
-        let serviceTrackpadApplied = service.map {
-            IOHIDServiceClientSetProperty($0, kIOHIDTrackpadAccelerationType as CFString, valueRef)
-        } ?? false
-        let devicePointerApplied = IOHIDDeviceSetProperty(device, kIOHIDPointerAccelerationKey as CFString, valueRef)
-        let deviceTrackpadApplied = IOHIDDeviceSetProperty(device, kIOHIDTrackpadAccelerationType as CFString, valueRef)
-        let serviceApplied = servicePointerApplied || serviceTrackpadApplied
-        let deviceApplied = devicePointerApplied || deviceTrackpadApplied
-        let ok = serviceApplied || deviceApplied
-        print("🔎 매직 이동속도 적용 결과: service=\(service != nil) servicePointer=\(servicePointerApplied) serviceTrackpad=\(serviceTrackpadApplied) devicePointer=\(devicePointerApplied) deviceTrackpad=\(deviceTrackpadApplied)")
-        if ok {
-            print("✅ 매직 트랙패드 per-device 이동 속도: \(systemValue) (UI: \(value))")
-        } else {
-            print("⚠️ 매직 트랙패드 per-device 이동 속도 미지원(드라이버 한계). 블루투스 마우스는 영향 없음.")
-        }
-    }
-
-    /// 매직 트랙패드 스크롤: 해당 HID 디바이스에만 설정. 전역 scrollwheel 미사용.
-    func setMagicTrackpadScrollSpeed(_ value: Double, device: IOHIDDevice?) {
-        let systemValue = toSystemTracking(value)
-        let normalized = systemValue / 3.0
-        guard let device = device else {
-            print("⚠️ 매직 트랙패드 HID 없음 — 스크롤 속도 미적용")
-            return
-        }
-        let valueRef = NSNumber(value: normalized) as CFTypeRef
-        let service = matchingService(for: device)
-        let serviceScrollApplied = service.map {
-            IOHIDServiceClientSetProperty($0, kIOHIDScrollAccelerationKey as CFString, valueRef)
-        } ?? false
-        let serviceTrackpadScrollApplied = service.map {
-            IOHIDServiceClientSetProperty($0, kIOHIDTrackpadScrollAccelerationKey as CFString, valueRef)
-        } ?? false
-        let deviceScrollApplied = IOHIDDeviceSetProperty(device, kIOHIDScrollAccelerationKey as CFString, valueRef)
-        let deviceTrackpadScrollApplied = IOHIDDeviceSetProperty(device, kIOHIDTrackpadScrollAccelerationKey as CFString, valueRef)
-        let serviceApplied = serviceScrollApplied || serviceTrackpadScrollApplied
-        let deviceApplied = deviceScrollApplied || deviceTrackpadScrollApplied
-        let ok = serviceApplied || deviceApplied
-        print("🔎 매직 스크롤 적용 결과: service=\(service != nil) serviceScroll=\(serviceScrollApplied) serviceTrackpadScroll=\(serviceTrackpadScrollApplied) deviceScroll=\(deviceScrollApplied) deviceTrackpadScroll=\(deviceTrackpadScrollApplied)")
-        if ok {
-            print("✅ 매직 트랙패드 per-device 스크롤: \(normalized) (UI: \(value))")
-        } else {
-            print("⚠️ 매직 트랙패드 per-device 스크롤 미지원. 전역/마우스는 영향 없음.")
-        }
-    }
-
-    // MARK: - 클릭 압력 (Threshold)
-
-    func setClickPressure(_ level: Int, for type: TrackpadType) {
-        // 0: Light, 1: Medium, 2: Firm
-        let domainKey: String
-        switch type {
-        case .internal:
-            domainKey = "com.apple.AppleMultitouchTrackpad"
-        case .magicTrackpad:
-            domainKey = "com.apple.driver.AppleBluetoothMultitouch.trackpad"
-        }
-        // firstClickThreshold / secondClickThreshold: 0(가벼움) ~ 2(강함)
-        shell_void("defaults write \(domainKey) FirstClickThreshold \(level)")
-        shell_void("defaults write \(domainKey) SecondClickThreshold \(level)")
-        print("✅ 클릭 압력 설정 [\(type.displayName)]: \(level)")
-    }
-
-    // MARK: - Shell Helper
-
-    /// Shell 명령 실행, 표준출력 반환. 실패 시 빈 문자열 또는 기본값 사용.
-    @discardableResult
-    func shell(_ command: String) -> String {
-        let task = Process()
-        task.launchPath = "/bin/zsh"
-        task.arguments = ["-c", command]
-        let outPipe = Pipe()
-        let errPipe = Pipe()
-        task.standardOutput = outPipe
-        task.standardError = errPipe
-        do {
-            try task.run()
-            task.waitUntilExit()
-            let data = outPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            if task.terminationStatus != Int32(0) {
-                let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
-                let errStr = String(data: errData, encoding: .utf8) ?? ""
-                print("⚠️ shell 실패 [\(command)]: exit=\(task.terminationStatus), stderr=\(errStr)")
+    /// 클릭 압력 0(가볍게) ~ 2(단단하게). 연결된 모든 트랙패드에 함께 적용된다
+    func setClickPressure(_ level: Int) {
+        let level = level.clamped(to: 0...2)
+        if ClickPressureBackend.setLevel(level) { return }
+        // 백엔드를 쓸 수 없는 macOS에서는 설정 파일에만 기록 (재로그인 후 반영)
+        for domain in ["com.apple.AppleMultitouchTrackpad", "com.apple.driver.AppleBluetoothMultitouch.trackpad"] {
+            for key in ["FirstClickThreshold", "SecondClickThreshold"] {
+                CFPreferencesSetAppValue(key as CFString, NSNumber(value: level), domain as CFString)
             }
-            return output
-        } catch {
-            print("❌ shell 실행 오류 [\(command)]: \(error)")
-            return ""
+            CFPreferencesAppSynchronize(domain as CFString)
         }
+        print("⚠️ 클릭 압력 즉시 적용 불가 — 설정 파일에만 기록")
     }
 
-    /// Shell 명령 실행 (출력 무시). 실패 시 로그만 남김.
-    func shell_void(_ command: String) {
-        let task = Process()
-        task.launchPath = "/bin/zsh"
-        task.arguments = ["-c", command]
-        let outPipe = Pipe()
-        let errPipe = Pipe()
-        task.standardOutput = outPipe
-        task.standardError = errPipe
-        do {
-            try task.run()
-            task.waitUntilExit()
-            _ = outPipe.fileHandleForReading.readDataToEndOfFile()
-            if task.terminationStatus != Int32(0) {
-                let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
-                let errStr = String(data: errData, encoding: .utf8) ?? ""
-                print("⚠️ defaults write 실패 [\(command)]: \(errStr)")
-            }
-        } catch {
-            print("❌ shell_void 실행 오류 [\(command)]: \(error)")
-        }
+    private static let trackingPrefKey = "com.apple.trackpad.scaling" as CFString
+}
+
+// MARK: - ClickPressureBackend
+// 시스템 설정 › 트랙패드의 '클릭' 슬라이더가 쓰는 PreferencePanesSupport.framework의 MTTGestureBackEnd를
+// Objective-C 런타임으로 호출한다 (비공개 API — 없으면 nil/false로 대체 경로 사용).
+
+private enum ClickPressureBackend {
+    private static let backend: NSObject? = {
+        _ = dlopen("/System/Library/PrivateFrameworks/PreferencePanesSupport.framework/PreferencePanesSupport", RTLD_NOW)
+        guard let cls = NSClassFromString("MTTGestureBackEnd") as? NSObject.Type else { return nil }
+        let sharedSel = NSSelectorFromString("sharedInstance")
+        guard cls.responds(to: sharedSel) else { return nil }
+        return cls.perform(sharedSel)?.takeUnretainedValue() as? NSObject
+    }()
+
+    static func currentLevel() -> Int? {
+        let sel = NSSelectorFromString("clickPressureLevel")
+        guard let backend, backend.responds(to: sel), let imp = backend.method(for: sel) else { return nil }
+        typealias Getter = @convention(c) (NSObject, Selector) -> Int
+        return unsafeBitCast(imp, to: Getter.self)(backend, sel)
     }
 
-    private func matchingService(for device: IOHIDDevice) -> IOHIDServiceClient? {
-        let client: IOHIDEventSystemClient
-        if let existingClient = eventSystemClient {
-            client = existingClient
-        } else {
-            client = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
-            eventSystemClient = client
-        }
-        guard let services = IOHIDEventSystemClientCopyServices(client) as? [IOHIDServiceClient] else {
-            return nil
-        }
-
-        let productName = IOHIDDeviceGetProperty(device, kIOHIDProductKey as CFString) as? String
-        let serialNumber = IOHIDDeviceGetProperty(device, kIOHIDSerialNumberKey as CFString) as? String
-        let transport = (IOHIDDeviceGetProperty(device, kIOHIDTransportKey as CFString) as? String)?.lowercased()
-        let vendorID = (IOHIDDeviceGetProperty(device, kIOHIDVendorIDKey as CFString) as? NSNumber)?.intValue
-        let productID = (IOHIDDeviceGetProperty(device, kIOHIDProductIDKey as CFString) as? NSNumber)?.intValue
-
-        print("🔎 HID 서비스 탐색: name=\(productName ?? "nil") serial=\(serialNumber ?? "nil") transport=\(transport ?? "nil") vid=\(vendorID.map(String.init) ?? "nil") pid=\(productID.map(String.init) ?? "nil") services=\(services.count)")
-        logCandidateServicesIfNeeded(
-            services: services,
-            productName: productName,
-            transport: transport,
-            vendorID: vendorID,
-            productID: productID
-        )
-
-        let matched = services.first { service in
-            let serviceName = IOHIDServiceClientCopyProperty(service, kIOHIDProductKey as CFString) as? String
-            let serviceSerial = IOHIDServiceClientCopyProperty(service, kIOHIDSerialNumberKey as CFString) as? String
-            let serviceTransport = (IOHIDServiceClientCopyProperty(service, kIOHIDTransportKey as CFString) as? String)?.lowercased()
-            let serviceVendor = (IOHIDServiceClientCopyProperty(service, kIOHIDVendorIDKey as CFString) as? NSNumber)?.intValue
-            let serviceProduct = (IOHIDServiceClientCopyProperty(service, kIOHIDProductIDKey as CFString) as? NSNumber)?.intValue
-
-            let nameMatches = (productName == nil || serviceName == productName)
-            let serialMatches = (serialNumber?.isEmpty != false) || serviceSerial == nil || serviceSerial == serialNumber
-            let transportMatches = (transport == nil || serviceTransport == transport)
-            let vendorMatches = (vendorID == nil || serviceVendor == vendorID)
-            let productMatches = (productID == nil || serviceProduct == productID)
-            return nameMatches && serialMatches && transportMatches && vendorMatches && productMatches
-        }
-        print("🔎 HID 서비스 매칭 결과: matched=\(matched != nil)")
-        return matched
-    }
-
-    private func logCandidateServicesIfNeeded(
-        services: [IOHIDServiceClient],
-        productName: String?,
-        transport: String?,
-        vendorID: Int?,
-        productID: Int?
-    ) {
-        guard !didLogServiceCandidates else { return }
-        didLogServiceCandidates = true
-
-        let interesting = services.compactMap { service -> String? in
-            let serviceName = IOHIDServiceClientCopyProperty(service, kIOHIDProductKey as CFString) as? String
-            let serviceTransport = (IOHIDServiceClientCopyProperty(service, kIOHIDTransportKey as CFString) as? String)?.lowercased()
-            let serviceVendor = (IOHIDServiceClientCopyProperty(service, kIOHIDVendorIDKey as CFString) as? NSNumber)?.intValue
-            let serviceProduct = (IOHIDServiceClientCopyProperty(service, kIOHIDProductIDKey as CFString) as? NSNumber)?.intValue
-            let serviceSerial = IOHIDServiceClientCopyProperty(service, kIOHIDSerialNumberKey as CFString) as? String
-
-            let sameVendorProduct = vendorID == serviceVendor && productID == serviceProduct
-            let nameContainsTrackpad = (serviceName?.lowercased().contains("trackpad") ?? false)
-            let bluetoothService = (serviceTransport?.contains("bluetooth") ?? false)
-            let sameName = productName != nil && serviceName == productName
-            let sameTransport = transport != nil && serviceTransport == transport
-
-            guard sameVendorProduct || nameContainsTrackpad || bluetoothService || sameName || sameTransport else {
-                return nil
-            }
-
-            return "name=\(serviceName ?? "nil") transport=\(serviceTransport ?? "nil") vid=\(serviceVendor.map(String.init) ?? "nil") pid=\(serviceProduct.map(String.init) ?? "nil") serial=\(serviceSerial ?? "nil")"
-        }
-
-        print("🔎 HID 서비스 후보 \(interesting.count)개")
-        for candidate in interesting.prefix(40) {
-            print("   ↳ \(candidate)")
-        }
+    static func setLevel(_ level: Int) -> Bool {
+        let sel = NSSelectorFromString("setClickPressureLevel:")
+        guard let backend, backend.responds(to: sel), let imp = backend.method(for: sel) else { return false }
+        typealias Setter = @convention(c) (NSObject, Selector, Int) -> Void
+        unsafeBitCast(imp, to: Setter.self)(backend, sel, level)
+        return true
     }
 }
