@@ -12,6 +12,8 @@ import ObjectiveC
 // - 이동 속도: IOHIDSetAccelerationWithKey(HIDTrackpadAcceleration) 즉시 반영
 // - 스크롤: IOHIDSetAccelerationWithKey(HIDTrackpadScrollAcceleration) 트랙패드에만 즉시 반영 (마우스 영향 없음)
 // - 클릭 압력: defaults 기록은 반영 안 됨 → 시스템 설정 앱과 같은 MTTGestureBackEnd 사용 시 즉시 반영
+// - 비용(0단계 실측): IOHIDSetAccelerationWithKey 1회 약 10ms, 클릭 압력 약 7ms, 이벤트 시스템 속성 0.04ms
+//   → 자동 전환 시 이동 속도는 이벤트 시스템으로 즉시, 나머지는 백그라운드 큐에서 적용
 
 final class SensitivityController {
 
@@ -19,6 +21,11 @@ final class SensitivityController {
     private init() {}
 
     private var ioHIDSystemConnect: io_connect_t = 0
+    private let eventSystemClient = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
+    /// 느린 적용(스크롤·클릭·설정 저장)을 순서대로 처리. 밀린 요청은 가장 최근 것만 적용
+    private let applyQueue = DispatchQueue(label: "magictrack.apply", qos: .userInteractive)
+    private let pendingLock = NSLock()
+    private var pendingProfile: (tracking: Double, scroll: Double, click: Int)?
 
     func openIOHIDSystem() -> Bool {
         guard ioHIDSystemConnect == 0 else { return true }
@@ -76,6 +83,28 @@ final class SensitivityController {
     }
 
     // MARK: - 적용
+
+    /// 프로필 한 번에 적용. 이동 속도는 즉시(메인 스레드 0.1ms 미만), 나머지는 백그라운드
+    func applyProfile(tracking: Double, scroll: Double, clickPressure: Int) {
+        IOHIDEventSystemClientSetProperty(eventSystemClient, kIOHIDTrackpadAccelerationType as CFString,
+                                          NSNumber(value: Int(toSystemTracking(tracking) * 65536)))
+        pendingLock.lock()
+        let alreadyQueued = pendingProfile != nil
+        pendingProfile = (tracking, scroll, clickPressure)
+        pendingLock.unlock()
+        guard !alreadyQueued else { return }
+        applyQueue.async { [weak self] in
+            guard let self else { return }
+            self.pendingLock.lock()
+            let profile = self.pendingProfile
+            self.pendingProfile = nil
+            self.pendingLock.unlock()
+            guard let profile else { return }
+            self.setTrackingSpeed(profile.tracking)
+            self.setScrollSpeed(profile.scroll)
+            self.setClickPressure(profile.click)
+        }
+    }
 
     /// 이동 속도 (UI 0~10). 즉시 반영 + 재부팅 후에도 유지되도록 전역 설정에도 기록
     func setTrackingSpeed(_ value: Double) {

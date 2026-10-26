@@ -271,15 +271,24 @@ struct MenuBarView: View {
         }
     }
 
+    /// 전환 모드 (자동 / 내장 고정 / 매직 고정)
     private var menuCapabilityNotice: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "info.circle")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.orange)
-            Text("수동 적용은 지원됩니다. 회전, 실입력 감지, 좌표/제스처 감지, 입력 기반 자동화는 실험/미지원 상태입니다.")
-                .font(.system(size: 10))
-                .foregroundStyle(.secondary)
-            Spacer()
+        VStack(alignment: .leading, spacing: 4) {
+            Picker("", selection: Binding(
+                get: { trackpadManager.switchMode },
+                set: { trackpadManager.setSwitchMode($0) }
+            )) {
+                ForEach(SwitchMode.allCases, id: \.self) { mode in
+                    Text(mode.displayName).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            if trackpadManager.switchMode == .auto && !trackpadManager.autoSwitchAvailable {
+                Text("자동 감지를 쓸 수 없어 마지막 설정으로 고정돼요")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.orange)
+            }
         }
         .padding(.horizontal, 14)
     }
@@ -363,15 +372,13 @@ private struct CompactDeviceSection: View {
                         get: { device.rotation },
                         set: { value in
                             device.rotation = value
-                            device.saveSettings()
+                            trackpadManager.applySettings(for: device)
                         }
                     ),
                     color: accentColor
                 )
 
-                Text("회전은 저장/UI 표시 전용이며 실제 입력 보정은 현재 미지원")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.secondary)
+                RotationStatusView(compact: true)
             }
         }
         .padding(10)
@@ -458,9 +465,6 @@ private struct CompactRotationRow: View {
             HStack(spacing: 4) {
                 Text("회전")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
-                Text("(실험 기능 · 미지원)")
-                    .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
 

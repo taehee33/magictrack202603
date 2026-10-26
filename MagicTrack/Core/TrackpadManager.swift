@@ -44,6 +44,12 @@ final class TrackpadManager: ObservableObject {
     @Published var internalTrackpad: TrackpadDevice?
     @Published var magicTrackpad: TrackpadDevice?
     @Published private(set) var activeTrackpadType: TrackpadType?
+    /// 자동(만진 트랙패드로 전환) / 내장 고정 / 매직 고정
+    @Published private(set) var switchMode: SwitchMode = {
+        UserDefaults.standard.string(forKey: "switch_mode").flatMap(SwitchMode.init(rawValue:)) ?? .auto
+    }()
+    /// 터치 감지를 쓸 수 있는지 (MultitouchSupport). false면 자동 모드도 마지막 프로필로 고정 동작
+    @Published private(set) var autoSwitchAvailable = false
     @Published private(set) var lastActiveSwitchAt: Date?
     @Published private(set) var recentInputLogs: [TrackpadInputDebugLog] = []
     @Published private(set) var hidConnectCount = 0
@@ -63,8 +69,11 @@ final class TrackpadManager: ObservableObject {
     private var magicTrackpadKey: String?
     private var keyToRefs: [String: Set<UInt>] = [:]
     private let preferredBluetoothKey = "preferred_bluetooth_trackpad_key"
-    /// 사용자가 마지막으로 직접 고른 트랙패드. 앱 재실행·장치 재연결 시 이 프로필을 다시 적용한다
+    /// 마지막으로 적용한 트랙패드. 앱 재실행 시 자동 모드의 첫 프로필로 쓴다
     private let preferredActiveKey = "active_trackpad_type"
+    private let switchModeKey = "switch_mode"
+    private var lastTouched: TrackpadType?
+    private let touchMonitor = TouchSourceMonitor.shared
     /// 시작 시 기존 장치를 훑는 동안에는 장치마다 프로필을 바꾸지 않고, 다 찾은 뒤 한 번만 적용한다
     private var isScanningExistingDevices = false
 
@@ -169,7 +178,9 @@ final class TrackpadManager: ObservableObject {
         IOHIDManagerScheduleWithRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
 
         // 현재 연결된 디바이스 스캔 후 마지막으로 쓰던 프로필 적용
+        lastTouched = UserDefaults.standard.string(forKey: preferredActiveKey).flatMap(TrackpadType.init(rawValue:))
         scanExistingDevices()
+        startTouchMonitor()
         restoreActiveTrackpad(source: "launch")
         print("🟢 TrackpadManager 모니터링 시작")
     }
@@ -179,6 +190,8 @@ final class TrackpadManager: ObservableObject {
             IOHIDManagerUnscheduleFromRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
             hidManager = nil
         }
+        touchMonitor.stop()
+        RotationEngine.shared.stop()
         sensitivityController.closeIOHIDSystem()
         print("🔴 TrackpadManager 모니터링 종료")
     }
@@ -279,6 +292,9 @@ final class TrackpadManager: ObservableObject {
     /// 장치 설정을 저장하고, 그 장치가 지금 적용 중인 프로필이면 시스템에 바로 반영
     func applySettings(for device: TrackpadDevice) {
         device.saveSettings()
+        if device.type == .magicTrackpad {
+            RotationEngine.shared.update(magicRotation: device.rotation, magicConnected: true, trackingSpeed: device.trackingSpeed)
+        }
         if activeTrackpadType == device.type {
             applyProfile(for: device.type)
         }
@@ -293,28 +309,57 @@ final class TrackpadManager: ObservableObject {
         applyProfile(for: type)
     }
 
+    /// 카드의 "이 설정 적용" 버튼: 그 트랙패드로 고정
     func activateProfileManually(for type: TrackpadType) {
-        activateTrackpad(type, source: "manual", force: true, persist: true)
+        setSwitchMode(.lock(type))
     }
 
+    /// ⌥M: 자동 → 내장 고정 → 매직 고정 → 자동
     func toggleSelectedTrackpad() {
-        let hasInternal = internalTrackpad != nil
-        let hasMagic = magicTrackpad != nil
+        setSwitchMode(switchMode.next)
+    }
 
-        switch (hasInternal, hasMagic, activeTrackpadType) {
-        case (true, true, .internal):
-            activateProfileManually(for: .magicTrackpad)
-        case (true, true, .magicTrackpad):
-            activateProfileManually(for: .internal)
-        case (true, true, nil):
-            activateProfileManually(for: .internal)
-        case (true, false, _):
-            activateProfileManually(for: .internal)
-        case (false, true, _):
-            activateProfileManually(for: .magicTrackpad)
-        default:
-            break
+    func setSwitchMode(_ mode: SwitchMode) {
+        let changed = mode != switchMode
+        switchMode = mode
+        UserDefaults.standard.set(mode.rawValue, forKey: switchModeKey)
+        if let locked = mode.lockedType { lastTouched = locked }
+        appendInputLog(source: "mode", type: mode.lockedType, deviceName: mode.displayName, detail: "")
+        restoreActiveTrackpad(source: "mode", force: true)
+        if changed {
+            SwitchHUD.show(title: mode.displayName, subtitle: activeTrackpadType?.displayName)
         }
+    }
+
+    // MARK: - 터치 기반 자동 전환
+
+    private func startTouchMonitor() {
+        touchMonitor.onTouchBegan = { [weak self] isBuiltIn in
+            self?.handleTouchBegan(isBuiltIn: isBuiltIn)
+        }
+        touchMonitor.start()
+        autoSwitchAvailable = touchMonitor.isAvailable
+    }
+
+    private func handleTouchBegan(isBuiltIn: Bool) {
+        let touched: TrackpadType = isBuiltIn ? .internal : .magicTrackpad
+        hidMonitorCount += 1
+        let otherTouching = touchMonitor.isTouching(builtIn: !isBuiltIn)
+        guard let target = SwitchCoordinator.onTouch(touched, state: coordinatorState, otherPadTouching: otherTouching) else { return }
+        lastTouched = target
+        activateTrackpad(target, source: "touch")
+        SwitchHUD.show(title: target.displayName, subtitle: nil)
+    }
+
+    private var coordinatorState: SwitchCoordinator.State {
+        SwitchCoordinator.State(
+            mode: switchMode,
+            active: activeTrackpadType,
+            hasInternal: internalTrackpad != nil,
+            hasMagic: magicTrackpad != nil,
+            lastTouched: lastTouched,
+            autoAvailable: autoSwitchAvailable
+        )
     }
 
     // MARK: - 편의 메서드
@@ -351,11 +396,8 @@ final class TrackpadManager: ObservableObject {
 
     // MARK: - 활성 장치 전환
 
-    /// - persist: 사용자가 직접 고른 경우에만 true. 재실행·재연결 시 이 선택을 다시 적용한다
-    private func activateTrackpad(_ type: TrackpadType, source: String, force: Bool = false, persist: Bool = false) {
-        if persist {
-            UserDefaults.standard.set(type.rawValue, forKey: preferredActiveKey)
-        }
+    private func activateTrackpad(_ type: TrackpadType, source: String, force: Bool = false) {
+        UserDefaults.standard.set(type.rawValue, forKey: preferredActiveKey)
         if activeTrackpadType == type && !force {
             return
         }
@@ -366,34 +408,22 @@ final class TrackpadManager: ObservableObject {
         print("🎯 활성 트랙패드 전환: \(type.displayName) source=\(source)")
     }
 
-    /// 연결 상태에 맞춰 적용할 프로필을 정한다.
-    /// 마지막으로 직접 고른 트랙패드가 연결돼 있으면 그것, 없으면 연결된 트랙패드(내장 우선)
-    private func restoreActiveTrackpad(source: String) {
+    /// 연결 상태·모드에 맞춰 적용할 프로필을 정한다 (규칙은 SwitchCoordinator)
+    private func restoreActiveTrackpad(source: String, force: Bool = false) {
         guard !isScanningExistingDevices else { return }
-        let preferred = UserDefaults.standard.string(forKey: preferredActiveKey).flatMap(TrackpadType.init(rawValue:))
-        let target: TrackpadType?
-        if let preferred, device(for: preferred) != nil {
-            target = preferred
-        } else if internalTrackpad != nil {
-            target = .internal
-        } else if magicTrackpad != nil {
-            target = .magicTrackpad
-        } else {
-            target = nil
-        }
-        guard let target else {
+        RotationEngine.shared.update(magicRotation: magicTrackpad?.rotation ?? .standard, magicConnected: magicTrackpad != nil,
+                                     trackingSpeed: magicTrackpad?.trackingSpeed)
+        guard let target = SwitchCoordinator.target(for: coordinatorState) else {
             activeTrackpadType = nil
             return
         }
-        // 실행 직후에는 같은 장치라도 반드시 한 번 적용
-        activateTrackpad(target, source: source, force: source == "launch" || source == "select")
+        // 실행 직후·모드 변경 시에는 같은 장치라도 반드시 한 번 적용
+        activateTrackpad(target, source: source, force: force || source == "launch" || source == "select")
     }
 
     private func applyProfile(for type: TrackpadType) {
         guard let device = device(for: type) else { return }
-        sensitivityController.setTrackingSpeed(device.trackingSpeed)
-        sensitivityController.setScrollSpeed(device.scrollSpeed)
-        sensitivityController.setClickPressure(device.clickPressure)
+        sensitivityController.applyProfile(tracking: device.trackingSpeed, scroll: device.scrollSpeed, clickPressure: device.clickPressure)
     }
 
     private func device(for type: TrackpadType) -> TrackpadDevice? {

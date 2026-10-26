@@ -215,12 +215,7 @@ struct TrackpadCardView: View {
                                     }
                                 }
 
-                                Label("현재는 UI 표시와 저장에만 반영됩니다", systemImage: "info.circle")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundStyle(.secondary)
-                                Label("실제 회전 입력 보정과 좌표/제스처 반영은 현재 미지원입니다", systemImage: "nosign")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundStyle(.secondary)
+                                RotationStatusView()
                             }
                         }
                     }
@@ -263,10 +258,6 @@ private struct RotationSelector: View {
 
                 Text("회전 방향")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-
-                Text("(실험 기능 · 미지원)")
-                    .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.secondary)
 
                 Spacer()
@@ -343,5 +334,33 @@ private struct ResetButton: View {
         .buttonStyle(.plain)
         .disabled(disabled)
         .help("기본값으로 초기화")
+    }
+}
+
+/// 회전 동작 상태와 권한 안내 (메인 창·메뉴바 공용)
+struct RotationStatusView: View {
+    @ObservedObject private var engine = RotationEngine.shared
+    var compact = false
+
+    var body: some View {
+        if engine.needsAccessibility {
+            HStack(spacing: 6) {
+                Label("회전하려면 손쉬운 사용 권한이 필요해요", systemImage: "exclamationmark.triangle")
+                    .font(.system(size: compact ? 9 : 10, weight: .medium))
+                    .foregroundStyle(.orange)
+                Button("권한 열기") { engine.requestAccessibility() }
+                    .font(.system(size: compact ? 9 : 10, weight: .semibold))
+                    .buttonStyle(.link)
+            }
+        } else if engine.driverFlipActive {
+            Label("포인터·스크롤·제스처가 모두 뒤집혀요", systemImage: "checkmark.circle")
+                .font(.system(size: compact ? 9 : 10, weight: .medium))
+                .foregroundStyle(.secondary)
+        } else {
+            Label(engine.isRunning ? "포인터·스크롤·드래그가 회전돼요 (제스처는 제외, 손쉬운 사용 권한 사용)" : "매직 트랙패드를 돌려 놓고 쓸 때 방향을 맞춰요",
+                  systemImage: engine.isRunning ? "checkmark.circle" : "info.circle")
+                .font(.system(size: compact ? 9 : 10, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
     }
 }

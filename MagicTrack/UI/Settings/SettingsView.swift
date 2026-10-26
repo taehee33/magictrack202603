@@ -11,6 +11,8 @@ struct SettingsView: View {
     @AppStorage("launchAtLogin") private var launchAtLogin = false
     @AppStorage(AppVisibilityManager.showDockIconKey) private var showDockIcon = true
     @AppStorage(AppVisibilityManager.showMenuBarIconKey) private var showMenuBarIcon = true
+    @AppStorage(SwitchHUD.enabledKey) private var showSwitchHUD = true
+    @ObservedObject private var rotationEngine = RotationEngine.shared
 
     var body: some View {
         TabView {
@@ -64,6 +66,10 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("트랙패드 전환") {
+                Toggle("전환할 때 화면에 알림 보이기", isOn: $showSwitchHUD)
+            }
+
             Section("앱 자동전환") {
                 Toggle("앱 변경 시 프리셋 자동 적용", isOn: Binding(
                     get: { appSwitcherManager.isEnabled },
@@ -86,12 +92,16 @@ struct SettingsView: View {
 
     private var permissionsSettings: some View {
         VStack(spacing: 16) {
-            Label("이 버전은 추가 권한 없이 동작해요", systemImage: "checkmark.shield")
+            Label("기본 기능은 추가 권한 없이 동작해요", systemImage: "checkmark.shield")
                 .font(.headline)
-            Text("트랙패드 감도·스크롤·클릭 압력 적용과 앱 자동전환에는 입력 모니터링이나 손쉬운 사용 권한이 필요하지 않아요.")
+            Text("감도·스크롤·클릭 압력 적용, 만진 트랙패드로 자동 전환, 앱 자동전환에는 권한이 필요하지 않아요.\n매직 트랙패드를 **90°로 회전**할 때만 손쉬운 사용 권한이 필요해요. (180°는 권한 없이 동작)")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+            if rotationEngine.needsAccessibility {
+                Button("손쉬운 사용 권한 열기") { rotationEngine.requestAccessibility() }
+                    .buttonStyle(.borderedProminent)
+            }
         }
         .padding()
     }

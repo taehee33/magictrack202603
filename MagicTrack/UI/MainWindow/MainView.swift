@@ -444,10 +444,10 @@ struct MainView: View {
     private var inputDebugPanel: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("HID 연결/감시 로그")
+                Text("장치·전환 로그")
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
-                Text("실입력 감지 가능 범위 확인")
+                Text("터치 감지와 프로필 전환 기록")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -455,22 +455,17 @@ struct MainView: View {
             VStack(spacing: 6) {
                 HStack(spacing: 6) {
                     debugCountPill(title: "CONNECT", count: trackpadManager.hidConnectCount, color: .blue)
-                    debugCountPill(title: "MONITOR", count: trackpadManager.hidMonitorCount, color: .blue)
+                    debugCountPill(title: "TOUCH", count: trackpadManager.hidMonitorCount, color: .blue)
                     debugCountPill(title: "ACTIVATE", count: trackpadManager.hidActivateCount, color: .blue)
-                }
-                HStack(spacing: 6) {
-                    debugCountPill(title: "VALUE", count: trackpadManager.hidValueCount, color: .orange)
-                    debugCountPill(title: "REPORT", count: trackpadManager.hidReportCount, color: .orange)
-                    Spacer()
                 }
             }
 
-            Text("현재 구조에서는 CONNECT/MONITOR/수동 ACTIVATE는 확인되지만, VALUE/REPORT는 실제 터치 중에도 0건일 수 있습니다.")
+            Text("TOUCH는 새 터치가 시작된 횟수, ACTIVATE는 프로필이 적용된 횟수예요. 터치 감지 \(trackpadManager.autoSwitchAvailable ? "사용 가능" : "사용 불가")")
                 .font(.system(size: 10))
                 .foregroundStyle(.secondary)
 
             if trackpadManager.recentInputLogs.isEmpty {
-                Text("아직 HID 로그가 없습니다")
+                Text("아직 기록이 없습니다")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             } else {
@@ -531,38 +526,59 @@ struct MainView: View {
         )
     }
 
+    /// 전환 모드 선택 (자동 / 내장 고정 / 매직 고정)
     private var capabilityNoticeCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Image(systemName: "info.circle")
+                Image(systemName: "hand.point.up.left")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.orange)
-                Text("기능 상태 안내")
+                    .foregroundStyle(.blue)
+                Text("트랙패드 전환")
                     .font(.system(size: 12, weight: .semibold))
-                Text("실험/미지원 포함")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.orange)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(Capsule().fill(Color.orange.opacity(0.12)))
+                Spacer()
+                Text("⌥M으로 순환")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
             }
 
-            Text("이동/스크롤/클릭 압력 저장과 수동 적용은 지원됩니다. 회전, 실입력 감지, 좌표/제스처 감지, 입력 기반 자동화는 현재 실험/미지원 상태이며 안내와 저장 위주로만 제공됩니다.")
+            Picker("", selection: Binding(
+                get: { trackpadManager.switchMode },
+                set: { trackpadManager.setSwitchMode($0) }
+            )) {
+                ForEach(SwitchMode.allCases, id: \.self) { mode in
+                    Text(mode.displayName).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+
+            Text(switchModeDescription)
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(trackpadManager.switchMode == .auto && !trackpadManager.autoSwitchAvailable ? .orange : .secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.orange.opacity(0.06))
+                .fill(Color.blue.opacity(0.06))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.orange.opacity(0.18), lineWidth: 1)
+                        .stroke(Color.blue.opacity(0.15), lineWidth: 1)
                 )
         )
     }
 
+    private var switchModeDescription: String {
+        let current = trackpadManager.activeTrackpadType.map { "지금 적용 중: \($0.displayName)" } ?? "연결된 트랙패드 없음"
+        switch trackpadManager.switchMode {
+        case .auto where !trackpadManager.autoSwitchAvailable:
+            return "자동 감지를 쓸 수 없어 마지막 설정으로 고정돼요 · \(current)"
+        case .auto:
+            return "손가락이 닿은 트랙패드의 설정으로 바로 바뀌어요 · \(current)"
+        case .lockInternal, .lockMagic:
+            return "어느 트랙패드를 써도 이 설정을 유지해요 · \(current)"
+        }
+    }
     // MARK: - Presets Tab
 
     private var presetsTab: some View {
