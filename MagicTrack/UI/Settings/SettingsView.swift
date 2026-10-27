@@ -111,7 +111,9 @@ struct SettingsView: View {
                     }
                     Button("취소", role: .cancel) {}
                 } message: {
-                    Text("직접 만들거나 고친 프리셋이 모두 지워지고 기본 프리셋 4개로 돌아가요. 되돌릴 수 없어요.")
+                    let lostRules = presetManager.rulesLostOnReset()
+                    Text("직접 만들거나 고친 프리셋이 모두 지워지고 기본 프리셋 4개로 돌아가요. 되돌릴 수 없어요."
+                         + (lostRules > 0 ? " 직접 만든 프리셋을 쓰는 앱 규칙 \(lostRules)개는 ‘프리셋 없음’이 돼요." : ""))
                 }
             }
 
@@ -159,7 +161,9 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(appSwitcherManager.rules) { rule in
-                    AppRuleRow(rule: rule) {
+                    AppRuleRow(rule: rule) { presetID in
+                        appSwitcherManager.setPreset(presetID, forRule: rule.id)
+                    } onDelete: {
                         appSwitcherManager.deleteRule(id: rule.id)
                     }
                 }

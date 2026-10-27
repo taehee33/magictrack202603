@@ -43,6 +43,35 @@ struct TrackpadPreset: Codable, Identifiable, Equatable {
         self.magicRotation = magicRotation
     }
 
+    /// 장치별 이동·스크롤·클릭 압력 값
+    func values(for type: TrackpadType) -> TrackpadDefaults {
+        switch type {
+        case .internal:
+            return TrackpadDefaults(trackingSpeed: internalTrackingSpeed, scrollSpeed: internalScrollSpeed, clickPressure: internalClickPressure)
+        case .magicTrackpad:
+            return TrackpadDefaults(trackingSpeed: magicTrackingSpeed, scrollSpeed: magicScrollSpeed, clickPressure: magicClickPressure)
+        }
+    }
+
+    mutating func setValues(_ values: TrackpadDefaults, for type: TrackpadType) {
+        switch type {
+        case .internal:
+            internalTrackingSpeed = values.trackingSpeed
+            internalScrollSpeed = values.scrollSpeed
+            internalClickPressure = values.clickPressure
+        case .magicTrackpad:
+            magicTrackingSpeed = values.trackingSpeed
+            magicScrollSpeed = values.scrollSpeed
+            magicClickPressure = values.clickPressure
+        }
+    }
+
+    /// 이 장치의 지금 값이 프리셋과 다른지 ('수정됨' 표시용). 매직은 회전도 비교
+    func differs(from device: TrackpadDevice) -> Bool {
+        if device.currentValues != values(for: device.type) { return true }
+        return device.type == .magicTrackpad && device.rotation != magicRotation
+    }
+
     // 빌트인 기본 프리셋. 속도는 시스템 설정 칸 번호 (이동 1~10, 스크롤 1~8). "일반" = macOS 기본값 (이동 4칸·스크롤 4칸·보통)
     static let defaultPresets: [TrackpadPreset] = [
         TrackpadPreset(
@@ -140,18 +169,51 @@ final class PresetManager: ObservableObject {
         }
     }
 
-    func deletePreset(id: UUID) {
+    /// 프리셋 삭제. removingRules면 이 프리셋을 쓰는 앱 규칙도 함께 지운다 (남기면 규칙 목록에 '프리셋 없음'으로 표시)
+    func deletePreset(id: UUID, removingRules: Bool = false) {
         presets.removeAll { $0.id == id }
         if activePresetID == id { activePresetID = nil }
         savePresets()
+        if removingRules {
+            AppSwitcherManager.shared.deleteRules(usingPreset: id)
+        }
     }
 
-    /// 기본 프리셋으로 초기화하고 저장 (설정 화면용)
+    /// 복제본을 원본 바로 뒤에 넣는다
+    @discardableResult
+    func duplicatePreset(id: UUID) -> TrackpadPreset? {
+        guard let index = presets.firstIndex(where: { $0.id == id }) else { return nil }
+        let source = presets[index]
+        var copy = TrackpadPreset(name: "\(source.name) 사본", emoji: source.emoji, magicRotation: source.magicRotation)
+        copy.setValues(source.values(for: .internal), for: .internal)
+        copy.setValues(source.values(for: .magicTrackpad), for: .magicTrackpad)
+        presets.insert(copy, at: index + 1)
+        savePresets()
+        return copy
+    }
+
+    /// 기본 프리셋으로 초기화하고 저장 (설정 화면용).
+    /// 기본 프리셋은 실행할 때마다 ID가 새로 생겨서, 같은 이름의 기본 프리셋을 쓰던 앱 규칙은 새 ID로 이어 준다
     func resetToDefaultPresetsAndSave() {
+        let old = presets
         presets = TrackpadPreset.defaultPresets
+        var remap: [UUID: UUID] = [:]
+        for preset in old {
+            if let replacement = presets.first(where: { $0.name == preset.name }) {
+                remap[preset.id] = replacement.id
+            }
+        }
+        AppSwitcherManager.shared.remapPresets(remap)
         activePresetID = presets.first?.id
         UserDefaults.standard.set(activePresetID?.uuidString, forKey: activePresetKey)
         savePresets()
+    }
+
+    /// 초기화하면 연결이 끊기는 앱 규칙 수 (직접 만든 프리셋을 쓰는 규칙)
+    func rulesLostOnReset() -> Int {
+        let defaultNames = Set(TrackpadPreset.defaultPresets.map(\.name))
+        let customIDs = Set(presets.filter { !defaultNames.contains($0.name) }.map(\.id))
+        return AppSwitcherManager.shared.rules.filter { customIDs.contains($0.presetID) }.count
     }
 
     // MARK: - 활성 프리셋 적용
@@ -181,22 +243,32 @@ final class PresetManager: ObservableObject {
         print("✅ 프리셋 적용: \(preset.emoji) \(preset.name)")
     }
 
-    /// 현재 감도 설정을 새 프리셋으로 저장
-    func saveCurrentAsPreset(name: String, emoji: String) {
+    /// 지금 감도 설정으로 채운 새 프리셋 (아직 저장하지 않음)
+    func presetFromCurrentSettings(name: String = "", emoji: String = "⚡") -> TrackpadPreset {
         let manager = TrackpadManager.shared
-        let preset = TrackpadPreset(
-            name: name,
-            emoji: emoji,
-            internalTrackingSpeed: manager.internalTrackpad?.trackingSpeed ?? TrackpadDevice.defaultTrackingSpeed(for: .internal),
-            internalScrollSpeed: manager.internalTrackpad?.scrollSpeed ?? TrackpadDevice.defaultScrollSpeed(for: .internal),
-            internalClickPressure: manager.internalTrackpad?.clickPressure ?? 1,
-            magicTrackingSpeed: manager.magicTrackpad?.trackingSpeed ?? TrackpadDevice.defaultTrackingSpeed(for: .magicTrackpad),
-            magicScrollSpeed: manager.magicTrackpad?.scrollSpeed ?? TrackpadDevice.defaultScrollSpeed(for: .magicTrackpad),
-            magicClickPressure: manager.magicTrackpad?.clickPressure ?? 1,
-            magicRotation: manager.magicTrackpad?.rotation ?? .standard
-        )
-        addPreset(preset)
-        activePresetID = preset.id
+        var preset = TrackpadPreset(name: name, emoji: emoji)
+        for type in [TrackpadType.internal, .magicTrackpad] {
+            let device = type == .internal ? manager.internalTrackpad : manager.magicTrackpad
+            preset.setValues(device?.currentValues ?? TrackpadDefaults.mine(for: type), for: type)
+        }
+        preset.magicRotation = manager.magicTrackpad?.rotation ?? .standard
+        return preset
+    }
+
+    /// 편집 시트에서 저장. 새 프리셋이 지금 값과 같으면 활성으로 표시하고, 쓰고 있는 프리셋을 고쳤으면 바로 다시 적용한다
+    func save(_ preset: TrackpadPreset) {
+        if presets.contains(where: { $0.id == preset.id }) {
+            updatePreset(preset)
+            if activePresetID == preset.id { activatePreset(preset) }
+        } else {
+            addPreset(preset)
+            let manager = TrackpadManager.shared
+            let devices = [manager.internalTrackpad, manager.magicTrackpad].compactMap { $0 }
+            if !devices.contains(where: { preset.differs(from: $0) }) {
+                activePresetID = preset.id
+                UserDefaults.standard.set(preset.id.uuidString, forKey: activePresetKey)
+            }
+        }
     }
 
     // MARK: - 영속화

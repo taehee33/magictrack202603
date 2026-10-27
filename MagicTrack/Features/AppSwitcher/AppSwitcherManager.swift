@@ -89,6 +89,33 @@ final class AppSwitcherManager: ObservableObject {
         saveRules()
     }
 
+    func rules(usingPreset presetID: UUID) -> [AppRule] {
+        rules.filter { $0.presetID == presetID }
+    }
+
+    func deleteRules(usingPreset presetID: UUID) {
+        rules.removeAll { $0.presetID == presetID }
+        saveRules()
+    }
+
+    /// 규칙이 가리키는 프리셋을 바꾼다 ('프리셋 없음' 규칙 고치기)
+    func setPreset(_ presetID: UUID, forRule ruleID: UUID) {
+        guard let index = rules.firstIndex(where: { $0.id == ruleID }) else { return }
+        rules[index].presetID = presetID
+        saveRules()
+    }
+
+    /// 프리셋 ID가 바뀐 경우(기본 프리셋 초기화) 규칙을 새 ID로 옮긴다
+    func remapPresets(_ remap: [UUID: UUID]) {
+        guard !remap.isEmpty else { return }
+        for index in rules.indices {
+            if let newID = remap[rules[index].presetID] {
+                rules[index].presetID = newID
+            }
+        }
+        saveRules()
+    }
+
     func toggleEnabled() {
         isEnabled.toggle()
         UserDefaults.standard.set(isEnabled, forKey: enabledKey)

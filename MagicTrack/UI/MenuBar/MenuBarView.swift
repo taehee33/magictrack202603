@@ -66,7 +66,7 @@ struct MenuBarView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
-                    ForEach(presetManager.presets.prefix(4)) { preset in
+                    ForEach(presetManager.presets) { preset in
                         Button {
                             presetManager.activatePreset(preset)
                         } label: {

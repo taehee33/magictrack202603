@@ -6,8 +6,8 @@ import SwiftUI
 struct TrackpadCardView: View {
     @ObservedObject var device: TrackpadDevice
     let accentColor: Color
-    /// 오른쪽에 표시할 현재 프리셋 이름 (nil이면 속도 값 표시)
-    var currentPresetLabel: String? = nil
+    /// 지금 활성 프리셋. 이 장치 값이 프리셋과 다르면 '수정됨'을 붙인다 (nil이면 속도 값 표시)
+    var activePreset: TrackpadPreset? = nil
     var isCurrentlyActive: Bool = false
     /// 두 카드를 나란히 놓을 때는 폭이 좁아 일러스트를 뺀다
     var showsIllustration: Bool = true
@@ -66,11 +66,20 @@ struct TrackpadCardView: View {
                 Spacer()
 
                 // 현재 프리셋 또는 속도 뱃지
-                if let label = currentPresetLabel, !label.isEmpty {
-                    Text(label)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(accentColor)
-                        .lineLimit(1)
+                if let preset = activePreset {
+                    let modified = preset.differs(from: device)
+                    HStack(spacing: 4) {
+                        Text("\(preset.emoji) \(preset.name)")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(accentColor)
+                        if modified {
+                            Text("· 수정됨")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .lineLimit(1)
+                    .help(modified ? "이 트랙패드 값이 프리셋과 달라요. 프리셋 탭에서 편집 › ‘현재 값으로 채우기’로 덮어쓸 수 있어요." : "지금 적용된 프리셋")
                 } else {
                     Text(String(format: "%.0f", device.trackingSpeed))
                         .font(.system(size: 20, weight: .bold, design: .rounded))

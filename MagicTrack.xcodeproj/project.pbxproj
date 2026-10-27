@@ -25,6 +25,7 @@
 		6DD7C0D01564433E9284648E /* SwitchHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BB56E59579B4FE08247D3E9 /* SwitchHUD.swift */; };
 		52CB377D72D949F4B2956B6B /* TrackpadIllustration.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE8A4AB747B4AA1B4D223DC /* TrackpadIllustration.swift */; };
 		F370F8124999486EBF4DA8FB /* TrackpadCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD40BFF2A0B649A99DFE19F1 /* TrackpadCardView.swift */; };
+		5E2D1B8F0C3A4F72B9D4E6A2 /* PresetEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E2D1B8F0C3A4F72B9D4E6A1 /* PresetEditorSheet.swift */; };
 		45EEE342787D4EB8931B73C9 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F2C813A8D244AFB2D9FB73 /* MainView.swift */; };
 		2A46F59E22C546D8805D2FD5 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03A88287DB374C7F955B57FD /* MenuBarView.swift */; };
 		EC6ABA2063034711BD19EC74 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCCFC6A433E4F1EA49A469A /* SettingsView.swift */; };
@@ -53,6 +54,7 @@
 		7BB56E59579B4FE08247D3E9 /* SwitchHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwitchHUD.swift"; sourceTree = "<group>"; };
 		ECE8A4AB747B4AA1B4D223DC /* TrackpadIllustration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackpadIllustration.swift"; sourceTree = "<group>"; };
 		CD40BFF2A0B649A99DFE19F1 /* TrackpadCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackpadCardView.swift"; sourceTree = "<group>"; };
+		5E2D1B8F0C3A4F72B9D4E6A1 /* PresetEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PresetEditorSheet.swift"; sourceTree = "<group>"; };
 		51F2C813A8D244AFB2D9FB73 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainView.swift"; sourceTree = "<group>"; };
 		03A88287DB374C7F955B57FD /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MenuBarView.swift"; sourceTree = "<group>"; };
 		3CCCFC6A433E4F1EA49A469A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView.swift"; sourceTree = "<group>"; };
@@ -178,6 +180,7 @@
 			isa = PBXGroup;
 			children = (
 				CD40BFF2A0B649A99DFE19F1 /* TrackpadCardView.swift */,
+				5E2D1B8F0C3A4F72B9D4E6A1 /* PresetEditorSheet.swift */,
 				51F2C813A8D244AFB2D9FB73 /* MainView.swift */,
 			);
 			name = MainWindow;
@@ -305,6 +308,7 @@
 				6DD7C0D01564433E9284648E /* SwitchHUD.swift in Sources */,
 				52CB377D72D949F4B2956B6B /* TrackpadIllustration.swift in Sources */,
 				F370F8124999486EBF4DA8FB /* TrackpadCardView.swift in Sources */,
+				5E2D1B8F0C3A4F72B9D4E6A2 /* PresetEditorSheet.swift in Sources */,
 				45EEE342787D4EB8931B73C9 /* MainView.swift in Sources */,
 				2A46F59E22C546D8805D2FD5 /* MenuBarView.swift in Sources */,
 				EC6ABA2063034711BD19EC74 /* SettingsView.swift in Sources */,

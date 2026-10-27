@@ -136,6 +136,11 @@ final class TrackpadDevice: ObservableObject, Identifiable {
     // 내 기본값: 장치별로 사용자가 저장한 기준값. 처음 실행할 때 그때의 시스템 설정 값으로 채운다
     // Mac 기본값: Apple 출고 기본값 (이동 4칸 · 스크롤 4칸 · 클릭 보통). 고정
 
+    /// 지금 이동·스크롤·클릭 압력 값 (프리셋과 비교할 때 사용)
+    var currentValues: TrackpadDefaults {
+        TrackpadDefaults(trackingSpeed: trackingSpeed, scrollSpeed: scrollSpeed, clickPressure: clickPressure)
+    }
+
     func saveAsMyDefaults() {
         let defaults = TrackpadDefaults(trackingSpeed: trackingSpeed, scrollSpeed: scrollSpeed, clickPressure: clickPressure)
         defaults.save(for: type)

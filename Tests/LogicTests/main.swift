@@ -83,5 +83,9 @@ check(rotated.trackingSpeed == 4 && rotated.scrollSpeed == 4 && rotated.clickPre
 check(rotated.myDefaults == pad.myDefaults, "새로 만든 장치도 저장된 내 기본값을 읽음")
 for (key, value) in zip(myDefaultKeys, savedDefaults) { UserDefaults.standard.set(value, forKey: key) }
 
+let valuesPad = TrackpadDevice(hidDevice: nil, type: .internal, productName: "테스트")
+valuesPad.trackingSpeed = 6; valuesPad.scrollSpeed = 3; valuesPad.clickPressure = 2
+check(valuesPad.currentValues == TrackpadDefaults(trackingSpeed: 6, scrollSpeed: 3, clickPressure: 2), "현재 값 = 이동·스크롤·클릭 (프리셋 '수정됨' 비교용)")
+
 print(failures == 0 ? "\n모든 테스트 통과" : "\n실패 \(failures)건")
 exit(failures == 0 ? 0 : 1)

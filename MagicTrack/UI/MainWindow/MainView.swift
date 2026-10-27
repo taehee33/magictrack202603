@@ -13,10 +13,9 @@ struct MainView: View {
     /// ⌘,로 창을 새로 열 때 설정 탭으로 시작하게 한다 (이미 열린 창은 알림으로 바꾼다)
     static var opensSettingsOnAppear = false
 
-    @State private var showSavePresetSheet = false
+    @State private var editingPreset: PresetEditorTarget?
+    @State private var deletingPreset: TrackpadPreset?
     @State private var showBluetoothPickerSheet = false
-    @State private var newPresetName = ""
-    @State private var newPresetEmoji = "⚡"
     @State private var selectedTab: Tab = .devices
     @State private var devicesTabWidth: CGFloat = 0
     @AppStorage(DeveloperMode.key) private var developerMode = false
@@ -79,8 +78,10 @@ struct MainView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .sheet(isPresented: $showSavePresetSheet) {
-            savePresetSheet
+        .sheet(item: $editingPreset) { target in
+            PresetEditorSheet(presetManager: presetManager, target: target) {
+                editingPreset = nil
+            }
         }
         .sheet(isPresented: $showBluetoothPickerSheet) {
             BluetoothDevicePickerSheet(
@@ -214,7 +215,7 @@ struct MainView: View {
 
                 // 현재 설정 저장 버튼
                 Button {
-                    showSavePresetSheet = true
+                    editingPreset = PresetEditorTarget(preset: presetManager.presetFromCurrentSettings(), isNew: true)
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "plus.circle.fill")
@@ -252,7 +253,7 @@ struct MainView: View {
         TrackpadCardView(
             device: internalDevice,
             accentColor: .blue,
-            currentPresetLabel: presetManager.activePreset.map { "\($0.emoji) \($0.name)" },
+            activePreset: presetManager.activePreset,
             isCurrentlyActive: trackpadManager.activeTrackpadType == .internal,
             showsIllustration: showsIllustration
         ) {
@@ -268,7 +269,7 @@ struct MainView: View {
                 TrackpadCardView(
                     device: magic,
                     accentColor: .purple,
-                    currentPresetLabel: presetManager.activePreset.map { "\($0.emoji) \($0.name)" },
+                    activePreset: presetManager.activePreset,
                     isCurrentlyActive: trackpadManager.activeTrackpadType == .magicTrackpad,
                     showsIllustration: showsIllustration
                 ) {
@@ -489,19 +490,24 @@ struct MainView: View {
                 ForEach(presetManager.presets) { preset in
                     PresetCardView(
                         preset: preset,
-                        isActive: presetManager.activePresetID == preset.id
+                        isActive: presetManager.activePresetID == preset.id,
+                        ruleCount: appSwitcherManager.rules(usingPreset: preset.id).count
                     ) {
                         withAnimation(.spring(response: 0.3)) {
                             presetManager.activatePreset(preset)
                         }
+                    } onEdit: {
+                        editingPreset = PresetEditorTarget(preset: preset, isNew: false)
+                    } onDuplicate: {
+                        presetManager.duplicatePreset(id: preset.id)
                     } onDelete: {
-                        presetManager.deletePreset(id: preset.id)
+                        deletingPreset = preset
                     }
                 }
 
-                // 새 프리셋 추가 버튼
+                // 새 프리셋 추가 버튼 (지금 값으로 채워서 연다)
                 Button {
-                    showSavePresetSheet = true
+                    editingPreset = PresetEditorTarget(preset: presetManager.presetFromCurrentSettings(), isNew: true)
                 } label: {
                     VStack(spacing: 8) {
                         Image(systemName: "plus.circle.fill")
@@ -524,46 +530,33 @@ struct MainView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
-    }
-
-    // MARK: - Save Preset Sheet
-
-    private var savePresetSheet: some View {
-        VStack(spacing: 20) {
-            Text("프리셋 저장")
-                .font(.system(size: 16, weight: .bold))
-
-            HStack(spacing: 12) {
-                TextField("이모지", text: $newPresetEmoji)
-                    .frame(width: 50)
-                    .textFieldStyle(.roundedBorder)
-
-                TextField("프리셋 이름", text: $newPresetName)
-                    .textFieldStyle(.roundedBorder)
-            }
-
-            HStack {
-                Button("취소") {
-                    showSavePresetSheet = false
+        .confirmationDialog(
+            deletingPreset.map { "‘\($0.emoji) \($0.name)’ 프리셋을 삭제할까요?" } ?? "",
+            isPresented: Binding(get: { deletingPreset != nil }, set: { if !$0 { deletingPreset = nil } }),
+            presenting: deletingPreset
+        ) { preset in
+            let ruleCount = appSwitcherManager.rules(usingPreset: preset.id).count
+            if ruleCount > 0 {
+                Button("프리셋과 앱 규칙 \(ruleCount)개 삭제", role: .destructive) {
+                    presetManager.deletePreset(id: preset.id, removingRules: true)
                 }
-                .buttonStyle(.bordered)
-                .keyboardShortcut(.cancelAction)
-
-                Button("저장") {
-                    if !newPresetName.isEmpty {
-                        presetManager.saveCurrentAsPreset(name: newPresetName, emoji: newPresetEmoji)
-                        showSavePresetSheet = false
-                        newPresetName = ""
-                    }
+                Button("프리셋만 삭제") {
+                    presetManager.deletePreset(id: preset.id)
                 }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
-                .disabled(newPresetName.isEmpty)
+            } else {
+                Button("삭제", role: .destructive) {
+                    presetManager.deletePreset(id: preset.id)
+                }
             }
+            Button("취소", role: .cancel) {}
+        } message: { preset in
+            let ruleCount = appSwitcherManager.rules(usingPreset: preset.id).count
+            Text(ruleCount > 0
+                 ? "이 프리셋을 쓰는 앱 규칙이 \(ruleCount)개 있어요. 프리셋만 지우면 그 규칙은 ‘프리셋 없음’으로 남아요. 되돌릴 수 없어요."
+                 : "되돌릴 수 없어요.")
         }
-        .padding(24)
-        .frame(width: 300)
     }
+
 }
 
 // MARK: - MagicTrackpad Placeholder
@@ -719,37 +712,44 @@ struct BluetoothDevicePickerSheet: View {
 struct PresetCardView: View {
     let preset: TrackpadPreset
     let isActive: Bool
+    let ruleCount: Int
     let onActivate: () -> Void
+    let onEdit: () -> Void
+    let onDuplicate: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
         Button(action: onActivate) {
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(preset.emoji)
-                        .font(.system(size: 22))
-                    Spacer()
+                Text(preset.emoji)
+                    .font(.system(size: 22))
+
+                HStack(spacing: 6) {
+                    Text(preset.name)
+                        .font(.system(size: 13, weight: .semibold))
                     if isActive {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(.blue)
-                            .font(.system(size: 14))
+                            .font(.system(size: 12))
                     }
                 }
 
-                Text(preset.name)
-                    .font(.system(size: 13, weight: .semibold))
-
                 HStack(spacing: 4) {
                     Image(systemName: "laptopcomputer")
-                        .font(.system(size: 9))
-                    Text(String(format: "%.1f", preset.internalTrackingSpeed))
-                        .font(.system(size: 10, design: .monospaced))
-                    Text("•")
+                        .font(.system(size: 10))
+                    Text("\(Int(preset.internalTrackingSpeed))칸")
+                    Text("·")
                     Image(systemName: "rectangle.roundedtop.fill")
-                        .font(.system(size: 9))
-                    Text(String(format: "%.1f", preset.magicTrackingSpeed))
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.system(size: 10))
+                    Text("\(Int(preset.magicTrackingSpeed))칸")
+                    if ruleCount > 0 {
+                        Text("·")
+                        Image(systemName: "app.badge")
+                            .font(.system(size: 10))
+                        Text("앱 \(ruleCount)")
+                    }
                 }
+                .font(.system(size: 11, design: .rounded))
                 .foregroundStyle(.secondary)
             }
             .padding(12)
@@ -764,13 +764,33 @@ struct PresetCardView: View {
             )
         }
         .buttonStyle(.plain)
-        .contextMenu {
-            Button(role: .destructive) {
-                onDelete()
+        .overlay(alignment: .topTrailing) {
+            Menu {
+                menuItems
             } label: {
-                Label("삭제", systemImage: "trash")
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(.primary.opacity(0.06)))
+                    .contentShape(Circle())
             }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .padding(8)
+            .help("편집 · 복제 · 삭제")
         }
+        .contextMenu { menuItems }
+    }
+
+    @ViewBuilder
+    private var menuItems: some View {
+        Button("편집…", action: onEdit)
+        Button("복제", action: onDuplicate)
+        Divider()
+        Button("삭제…", role: .destructive, action: onDelete)
     }
 }
 
@@ -778,9 +798,12 @@ struct PresetCardView: View {
 
 struct AppRuleRow: View {
     let rule: AppRule
+    let onChangePreset: (UUID) -> Void
     let onDelete: () -> Void
+    @ObservedObject private var presetManager = PresetManager.shared
 
     var body: some View {
+        let preset = presetManager.presets.first { $0.id == rule.presetID }
         HStack {
             if let iconData = rule.appIcon, let nsImage = NSImage(data: iconData) {
                 Image(nsImage: nsImage)
@@ -792,21 +815,29 @@ struct AppRuleRow: View {
                     .foregroundStyle(.blue)
                     .frame(width: 20, height: 20)
             }
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(rule.appName)
                     .font(.system(size: 13, weight: .medium))
-                let presetName = PresetManager.shared.presets
-                    .first { $0.id == rule.presetID }?.name ?? "알 수 없음"
-                Text("→ \(presetName)")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                if preset == nil {
+                    Label("프리셋이 없어요. 오른쪽에서 다시 골라 주세요.", systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.orange)
+                }
             }
             Spacer()
+            // 적용할 프리셋 바꾸기 (프리셋이 지워진 규칙도 여기서 고친다)
+            Menu(preset.map { "\($0.emoji) \($0.name)" } ?? "프리셋 고르기") {
+                ForEach(presetManager.presets) { option in
+                    Button("\(option.emoji) \(option.name)") { onChangePreset(option.id) }
+                }
+            }
+            .fixedSize()
             Button(role: .destructive, action: onDelete) {
                 Image(systemName: "minus.circle.fill")
                     .foregroundStyle(.red)
             }
             .buttonStyle(.plain)
+            .help("규칙 삭제")
         }
         .padding(.vertical, 4)
     }
