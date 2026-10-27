@@ -104,21 +104,11 @@ struct MainView: View {
 
     private var headerView: some View {
         HStack(spacing: 12) {
-            // 앱 아이콘
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.blue, Color.purple],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 42, height: 42)
-                Image(systemName: "rectangle.roundedtop.fill")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
-            }
+            // 앱 아이콘 (아이콘 이미지는 1024 중 824만 몸체라 52로 그리면 몸체가 약 42)
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 52, height: 52)
+                .padding(-5)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 8) {

@@ -413,3 +413,39 @@ private struct CompactRotationRow: View {
         }
     }
 }
+
+// MARK: - MenuBarIcon
+// 메뉴바 아이콘: 앱 아이콘처럼 뒤 내장 패드 + 기울어진 앞 매직 패드. 지금 적용 중인 패드만 채워서 상태를 보여준다 (단색 템플릿)
+
+enum MenuBarIcon {
+    private static let size = NSSize(width: 20, height: 16)
+
+    static func image(active: TrackpadType?) -> NSImage {
+        let image = NSImage(size: size, flipped: true) { _ in
+            let back = NSBezierPath(roundedRect: NSRect(x: 1.5, y: 2, width: 11, height: 8), xRadius: 2, yRadius: 2)
+            let front = NSBezierPath(roundedRect: NSRect(x: -5.5, y: -4, width: 11, height: 8), xRadius: 2, yRadius: 2)
+            var transform = AffineTransform(translationByX: 13.3, byY: 10)
+            transform.rotate(byDegrees: -18)
+            front.transform(using: transform)
+            back.lineWidth = 1.4
+            front.lineWidth = 1.4
+            NSColor.black.set()
+
+            if active == .internal { back.fill() } else { back.stroke() }
+
+            // 앞 패드 자리를 비워 뒤 패드 선과 겹쳐 보이지 않게 한다
+            NSGraphicsContext.current?.compositingOperation = .clear
+            front.fill()
+            let gap = front.copy() as! NSBezierPath
+            gap.lineWidth = 3.2
+            gap.stroke()
+            NSGraphicsContext.current?.compositingOperation = .sourceOver
+
+            if active == .magicTrackpad { front.fill() } else { front.stroke() }
+            return true
+        }
+        image.isTemplate = true
+        image.accessibilityDescription = AppInfo.name
+        return image
+    }
+}

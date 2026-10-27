@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1A2B3C4D5E6F708192A3B4C5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F708192A3B4C4 /* Assets.xcassets */; };
+		4D1C0A7E9B2F4E61A8C3D5F1 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4D1C0A7E9B2F4E61A8C3D5F0 /* AppIcon.icon */; };
 		2C634814273F44B79DB36CB2 /* MagicTrackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2869ACE5F4974877B8AF7AA7 /* MagicTrackApp.swift */; };
 		6E040DF3F6E44AD89042FA0E /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108312D0321249A9B1369F95 /* AppDelegate.swift */; };
 		DE4BF6B9A36740949D780984 /* TrackpadDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77C7E94D0E1D4532A9B3DDEB /* TrackpadDevice.swift */; };
@@ -34,6 +35,7 @@
 		1A2B3C4D5E6F708192A3B4C2 /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Resources; sourceTree = "<group>"; };
 		1A2B3C4D5E6F708192A3B4C3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1A2B3C4D5E6F708192A3B4C4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		4D1C0A7E9B2F4E61A8C3D5F0 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		1A2B3C4D5E6F708192A3B4C6 /* MagicTrack.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MagicTrack.entitlements; sourceTree = "<group>"; };
 		2869ACE5F4974877B8AF7AA7 /* MagicTrackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MagicTrackApp.swift"; sourceTree = "<group>"; };
 		108312D0321249A9B1369F95 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate.swift"; sourceTree = "<group>"; };
@@ -89,6 +91,7 @@
 				1A2B3C4D5E6F708192A3B4C3 /* Info.plist */,
 				1A2B3C4D5E6F708192A3B4C6 /* MagicTrack.entitlements */,
 				1A2B3C4D5E6F708192A3B4C4 /* Assets.xcassets */,
+				4D1C0A7E9B2F4E61A8C3D5F0 /* AppIcon.icon */,
 			);
 			name = Resources;
 			path = "MagicTrack/Resources";
@@ -275,6 +278,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1A2B3C4D5E6F708192A3B4C5 /* Assets.xcassets in Resources */,
+				4D1C0A7E9B2F4E61A8C3D5F1 /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

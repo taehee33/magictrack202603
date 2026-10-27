@@ -36,10 +36,13 @@ struct MagicTrackApp: App {
             }
         }
 
-        MenuBarExtra(AppInfo.name, systemImage: "rectangle.roundedtop.fill", isInserted: $showMenuBarIcon) {
+        MenuBarExtra(isInserted: $showMenuBarIcon) {
             MenuBarView()
                 .environmentObject(trackpadManager)
                 .environmentObject(presetManager)
+        } label: {
+            // 지금 적용 중인 트랙패드가 채워진 아이콘
+            Image(nsImage: MenuBarIcon.image(active: trackpadManager.activeTrackpadType))
         }
         .menuBarExtraStyle(.window)
     }
