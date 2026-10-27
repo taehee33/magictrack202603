@@ -1,0 +1,1701 @@
+{
+  "sourceLanguage": "ko",
+  "strings": {
+    "": {
+      "shouldTranslate": false
+    },
+    "%@ · %@": {
+      "shouldTranslate": false
+    },
+    "%@ 단축키를 등록하지 못했어요. 다른 앱이 쓰고 있을 수 있어요. 다른 조합을 지정해 주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t register the %@ shortcut. Another app may be using it. Choose a different combination."
+          }
+        }
+      }
+    },
+    "%@ 사본": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Copy"
+          }
+        }
+      }
+    },
+    "%@이 켜져 있는 동안에는 여기 설정이 시스템 설정보다 우선 적용돼요. 앱을 끄면 시스템 설정 값으로 돌아가요. 시스템 설정에 저장된 값은 바꾸지 않아요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "While %@ is running, these settings take priority over System Settings. When you quit the app, the System Settings values come back. Values saved in System Settings are never changed."
+          }
+        }
+      }
+    },
+    "%lld": {
+      "shouldTranslate": false
+    },
+    "%lld개 연결됨": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Connected"
+          }
+        }
+      }
+    },
+    "%lld칸": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
+        }
+      }
+    },
+    "Dock에만 표시됩니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shown in the Dock only."
+          }
+        }
+      }
+    },
+    "Mac 기본값: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac Default: %@"
+          }
+        }
+      }
+    },
+    "Mac 기본값으로 · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac Default · %@"
+          }
+        }
+      }
+    },
+    "TOUCH는 새 터치가 시작된 횟수, ACTIVATE는 프로필이 적용된 횟수예요. 터치 감지 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOUCH counts new touches, ACTIVATE counts profile switches. Touch detection: %@"
+          }
+        }
+      }
+    },
+    "VID %@ · PID %@": {
+      "shouldTranslate": false
+    },
+    "·": {
+      "shouldTranslate": false
+    },
+    "· 수정됨": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· Modified"
+          }
+        }
+      }
+    },
+    "‘%@ %@’ 프리셋을 삭제할까요?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the “%@ %@” preset?"
+          }
+        }
+      }
+    },
+    "⌃ 또는 ⌘와 함께": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add ⌃ or ⌘"
+          }
+        }
+      }
+    },
+    "가볍게": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        }
+      }
+    },
+    "감도·스크롤·클릭 압력 적용, 만진 트랙패드로 자동 전환, 앱 자동전환에는 권한이 필요하지 않아요. 매직 트랙패드를 **90°로 회전**할 때만 손쉬운 사용 권한이 필요해요. (180°는 권한 없이 동작)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracking, scrolling, click pressure, switching to the touched trackpad, and app rules need no permissions. Only **rotating the Magic Trackpad 90°** needs Accessibility permission. (180° works without it.)"
+          }
+        }
+      }
+    },
+    "감지된 블루투스 기기가 없습니다": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Bluetooth devices found"
+          }
+        }
+      }
+    },
+    "개발자 모드": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Developer Mode"
+          }
+        }
+      }
+    },
+    "게임": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gaming"
+          }
+        }
+      }
+    },
+    "고급": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Advanced"
+          }
+        }
+      }
+    },
+    "권한": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permissions"
+          }
+        }
+      }
+    },
+    "권한 열기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Permissions"
+          }
+        }
+      }
+    },
+    "규칙 삭제": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Rule"
+          }
+        }
+      }
+    },
+    "규칙 추가": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Rule"
+          }
+        }
+      }
+    },
+    "기기 선택": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Device"
+          }
+        }
+      }
+    },
+    "기본": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        }
+      }
+    },
+    "기본 기능은 추가 권한 없이 동작해요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Core features work without extra permissions"
+          }
+        }
+      }
+    },
+    "기본값": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defaults"
+          }
+        }
+      }
+    },
+    "기본값 되돌리기 · 내 기본값 저장": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset to Defaults · Save My Defaults"
+          }
+        }
+      }
+    },
+    "기본값으로 되돌리기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset to Default"
+          }
+        }
+      }
+    },
+    "기타…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More…"
+          }
+        }
+      }
+    },
+    "내 기본값: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Defaults: %@"
+          }
+        }
+      }
+    },
+    "내 기본값으로 · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Default · %@"
+          }
+        }
+      }
+    },
+    "내장": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built-in"
+          }
+        }
+      }
+    },
+    "내장 고정": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built-in Only"
+          }
+        }
+      }
+    },
+    "내장 트랙패드": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built-in Trackpad"
+          }
+        }
+      }
+    },
+    "다른 기기로 변경": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Device"
+          }
+        }
+      }
+    },
+    "다시 시작하면 바뀐 언어로 보여요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart the app to use the new language."
+          }
+        }
+      }
+    },
+    "단단하게": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firm"
+          }
+        }
+      }
+    },
+    "단축키 (자동 → 내장 고정 → 매직 고정)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcut (Auto → Built-in Only → Magic Only)"
+          }
+        }
+      }
+    },
+    "단축키로 자동 → 내장 고정 → 매직 고정 순환": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcut cycles Auto → Built-in Only → Magic Only"
+          }
+        }
+      }
+    },
+    "닫기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "데이터": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data"
+          }
+        }
+      }
+    },
+    "되돌릴 수 없어요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This can’t be undone."
+          }
+        }
+      }
+    },
+    "두 트랙패드의 지금 설정으로 값을 채워요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill in the current settings of both trackpads"
+          }
+        }
+      }
+    },
+    "디자인": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Design"
+          }
+        }
+      }
+    },
+    "로그인 시 자동 시작": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open at Login"
+          }
+        }
+      }
+    },
+    "마우스": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mouse"
+          }
+        }
+      }
+    },
+    "마지막 전환 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last switched %@"
+          }
+        }
+      }
+    },
+    "매직": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magic"
+          }
+        }
+      }
+    },
+    "매직 고정": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magic Only"
+          }
+        }
+      }
+    },
+    "매직 트랙패드": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magic Trackpad"
+          }
+        }
+      }
+    },
+    "매직 트랙패드 또는 마우스를 블루투스로 연결한 뒤\n앱을 다시 열어주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect a Magic Trackpad or mouse over Bluetooth,\nthen reopen the app."
+          }
+        }
+      }
+    },
+    "매직 트랙패드 선택": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Magic Trackpad"
+          }
+        }
+      }
+    },
+    "매직 트랙패드 연결 없음": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Magic Trackpad connected"
+          }
+        }
+      }
+    },
+    "매직 트랙패드를 돌려 놓고 쓸 때 방향을 맞춰요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Match the direction when your Magic Trackpad is turned"
+          }
+        }
+      }
+    },
+    "맥북 내장 트랙패드와 블루투스 매직 트랙패드의 감도를 개별적으로 조절합니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set the sensitivity of your MacBook’s built-in trackpad and your Magic Trackpad separately."
+          }
+        }
+      }
+    },
+    "메뉴바에만 표시됩니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shown in the menu bar only."
+          }
+        }
+      }
+    },
+    "모두 Mac 기본값으로": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset All to Mac Defaults"
+          }
+        }
+      }
+    },
+    "모두 내 기본값으로": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset All to My Defaults"
+          }
+        }
+      }
+    },
+    "모든 프리셋 초기화…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset All Presets…"
+          }
+        }
+      }
+    },
+    "모든 프리셋을 초기화할까요?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset all presets?"
+          }
+        }
+      }
+    },
+    "미분류": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown"
+          }
+        }
+      }
+    },
+    "버전": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
+          }
+        }
+      }
+    },
+    "버전 %@ (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ (%@)"
+          }
+        }
+      }
+    },
+    "버튼을 누른 뒤 원하는 조합을 누르세요. 글자 입력을 가로채지 않도록 ⌃ 또는 ⌘가 들어간 조합만 쓸 수 있어요. 취소는 esc.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click the button, then press the combination you want. It must include ⌃ or ⌘ so it doesn’t interfere with typing. Press Esc to cancel."
+          }
+        }
+      }
+    },
+    "변경": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change"
+          }
+        }
+      }
+    },
+    "보통": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium"
+          }
+        }
+      }
+    },
+    "복제": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate"
+          }
+        }
+      }
+    },
+    "블루투스로 연결하거나 기기를 선택하세요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect over Bluetooth or choose a device"
+          }
+        }
+      }
+    },
+    "사용 가능": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "available"
+          }
+        }
+      }
+    },
+    "사용 불가": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "unavailable"
+          }
+        }
+      }
+    },
+    "사용 중": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Use"
+          }
+        }
+      }
+    },
+    "삭제": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "삭제…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete…"
+          }
+        }
+      }
+    },
+    "새 프리셋": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Preset"
+          }
+        }
+      }
+    },
+    "선택": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose"
+          }
+        }
+      }
+    },
+    "선택 해제": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear Selection"
+          }
+        }
+      }
+    },
+    "선택됨": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        }
+      }
+    },
+    "설정": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "설정…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings…"
+          }
+        }
+      }
+    },
+    "손가락이 닿은 트랙패드의 설정으로 바로 바뀌어요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switches instantly to the settings of the trackpad you touch"
+          }
+        }
+      }
+    },
+    "손쉬운 사용 권한 열기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Accessibility Settings"
+          }
+        }
+      }
+    },
+    "스크롤": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scroll"
+          }
+        }
+      }
+    },
+    "스크롤 속도": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scrolling Speed"
+          }
+        }
+      }
+    },
+    "시스템 설정 › 로그인 항목에서 %@을 허용해야 자동 시작돼요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow %@ in System Settings › Login Items to open it at login."
+          }
+        }
+      }
+    },
+    "시스템 설정 열기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
+          }
+        }
+      }
+    },
+    "시스템 이모지 창 (이모지 칸을 누른 뒤 고르세요)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System emoji picker (click the emoji field first)"
+          }
+        }
+      }
+    },
+    "시작": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startup"
+          }
+        }
+      }
+    },
+    "실행 중일 때 Dock과 메뉴바에 함께 표시됩니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shown in both the Dock and the menu bar while running."
+          }
+        }
+      }
+    },
+    "아직 기록이 없습니다": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No entries yet"
+          }
+        }
+      }
+    },
+    "앱 %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Apps"
+          }
+        }
+      }
+    },
+    "앱 규칙 추가": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add App Rule"
+          }
+        }
+      }
+    },
+    "앱 규칙이 없어요. 특정 앱을 쓸 때 적용할 프리셋을 정해 보세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No app rules yet. Choose a preset to apply when you use a specific app."
+          }
+        }
+      }
+    },
+    "앱 변경 시 프리셋 자동 적용": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apply presets automatically when switching apps"
+          }
+        }
+      }
+    },
+    "앱 선택": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose App"
+          }
+        }
+      }
+    },
+    "앱 실행 중 Dock에 보이기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in Dock while running"
+          }
+        }
+      }
+    },
+    "앱 실행 중 메뉴바에 보이기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in menu bar while running"
+          }
+        }
+      }
+    },
+    "앱 자동전환": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Rules"
+          }
+        }
+      }
+    },
+    "앱 접근성을 위해 Dock 또는 메뉴바 중 하나는 항상 유지됩니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To keep the app reachable, either the Dock or the menu bar always stays on."
+          }
+        }
+      }
+    },
+    "앱을 선택하세요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an app"
+          }
+        }
+      }
+    },
+    "앱이 켜져 있는 동안 시스템 설정보다 우선 적용돼요. 앱을 끄면 시스템 설정 값으로 돌아가요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes priority over System Settings while the app runs. Quitting restores the System Settings values."
+          }
+        }
+      }
+    },
+    "어느 트랙패드를 써도 %@ 설정을 유지해요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keeps the %@ settings whichever trackpad you use"
+          }
+        }
+      }
+    },
+    "언어": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        }
+      }
+    },
+    "연결 없음": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Connected"
+          }
+        }
+      }
+    },
+    "연결된 트랙패드 없음": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No trackpad connected"
+          }
+        }
+      }
+    },
+    "연결됨": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected"
+          }
+        }
+      }
+    },
+    "열기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        }
+      }
+    },
+    "오른쪽 90°": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right 90°"
+          }
+        }
+      }
+    },
+    "왼쪽 90°": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left 90°"
+          }
+        }
+      }
+    },
+    "우 90": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "R 90"
+          }
+        }
+      }
+    },
+    "이 트랙패드 값이 프리셋과 달라요. 프리셋 탭에서 편집 › ‘현재 값으로 채우기’로 덮어쓸 수 있어요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This trackpad’s values differ from the preset. To overwrite the preset, go to Presets › Edit › Fill In Current Values."
+          }
+        }
+      }
+    },
+    "이 프리셋을 쓰는 앱 규칙이 %lld개 있어요. 프리셋만 지우면 그 규칙은 ‘프리셋 없음’으로 남아요. 되돌릴 수 없어요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld app rules use this preset. If you delete only the preset, those rules stay with no preset. This can’t be undone."
+          }
+        }
+      }
+    },
+    "이동": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Track"
+          }
+        }
+      }
+    },
+    "이동 %lld칸 · 스크롤 %lld칸 · 클릭 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracking %lld · Scrolling %lld · Click %@"
+          }
+        }
+      }
+    },
+    "이동 속도": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracking Speed"
+          }
+        }
+      }
+    },
+    "이모지 (기타 이모지는 아래 '기타…')": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emoji (for others, use “More…” below)"
+          }
+        }
+      }
+    },
+    "일반": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        }
+      }
+    },
+    "자동": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto"
+          }
+        }
+      }
+    },
+    "자동 감지를 쓸 수 없어 마지막 설정으로 고정돼요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch detection isn’t available, so the last settings stay in place"
+          }
+        }
+      }
+    },
+    "자동 시작을 끄지 못했어요: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t turn off Open at Login: %@"
+          }
+        }
+      }
+    },
+    "자동 시작을 켜지 못했어요: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t turn on Open at Login: %@"
+          }
+        }
+      }
+    },
+    "장치·전환 로그": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device & Switch Log"
+          }
+        }
+      }
+    },
+    "저장": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        }
+      }
+    },
+    "적용할 프리셋": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preset to Apply"
+          }
+        }
+      }
+    },
+    "전환 모드": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch Mode"
+          }
+        }
+      }
+    },
+    "전환 모드 단축키 사용": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use switch mode shortcut"
+          }
+        }
+      }
+    },
+    "전환 모드 바꾸기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Switch Mode"
+          }
+        }
+      }
+    },
+    "전환 모드 바꾸기 (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Switch Mode (%@)"
+          }
+        }
+      }
+    },
+    "전환할 때 화면에 알림 보이기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show a notice when switching"
+          }
+        }
+      }
+    },
+    "정보": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        }
+      }
+    },
+    "종료": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit"
+          }
+        }
+      }
+    },
+    "좌 90": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L 90"
+          }
+        }
+      }
+    },
+    "지금 다시 시작": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart Now"
+          }
+        }
+      }
+    },
+    "지금 사용 중인 프리셋이라 저장하면 바로 적용돼요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This preset is in use, so saving applies it right away."
+          }
+        }
+      }
+    },
+    "지금 적용된 프리셋": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current preset"
+          }
+        }
+      }
+    },
+    "지금: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now: %@"
+          }
+        }
+      }
+    },
+    "직접 만들거나 고친 프리셋이 모두 지워지고 기본 프리셋 4개로 돌아가요. 되돌릴 수 없어요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All presets you created or edited will be removed and the 4 built-in presets restored. This can’t be undone."
+          }
+        }
+      }
+    },
+    "직접 만들거나 고친 프리셋이 모두 지워지고 기본 프리셋 4개로 돌아가요. 되돌릴 수 없어요. 직접 만든 프리셋을 쓰는 앱 규칙 %lld개는 ‘프리셋 없음’이 돼요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All presets you created or edited will be removed and the 4 built-in presets restored. This can’t be undone. %lld app rules that use your own presets will be left with no preset."
+          }
+        }
+      }
+    },
+    "초기화": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset"
+          }
+        }
+      }
+    },
+    "추가": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        }
+      }
+    },
+    "취소": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "코딩": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coding"
+          }
+        }
+      }
+    },
+    "클릭 압력": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click Pressure"
+          }
+        }
+      }
+    },
+    "키를 누르세요…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press keys…"
+          }
+        }
+      }
+    },
+    "터치 감지와 프로필 전환 기록": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch detection and profile switch history"
+          }
+        }
+      }
+    },
+    "트랙패드": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trackpad"
+          }
+        }
+      }
+    },
+    "트랙패드 개별 감도 조절": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Separate trackpad sensitivity"
+          }
+        }
+      }
+    },
+    "트랙패드 전환": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trackpad Switching"
+          }
+        }
+      }
+    },
+    "트랙패드 탭 아래에 장치 연결·터치 감지·전환 기록을 보여줘요. 문제를 알릴 때 도움이 돼요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows device connections, touch detection, and switch history below the Trackpad tab. Helpful when reporting a problem."
+          }
+        }
+      }
+    },
+    "트랙패드를 선택하면 감도 설정이 적용됩니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choosing a trackpad applies its sensitivity settings."
+          }
+        }
+      }
+    },
+    "편집 · 복제 · 삭제": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit · Duplicate · Delete"
+          }
+        }
+      }
+    },
+    "편집…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit…"
+          }
+        }
+      }
+    },
+    "포인터·스크롤·드래그가 회전돼요 (제스처는 제외, 손쉬운 사용 권한 사용)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pointer, scrolling, and dragging are rotated (not gestures; uses Accessibility permission)"
+          }
+        }
+      }
+    },
+    "포인터·스크롤·제스처가 모두 뒤집혀요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pointer, scrolling, and gestures are all flipped"
+          }
+        }
+      }
+    },
+    "프리셋": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presets"
+          }
+        }
+      }
+    },
+    "프리셋 고르기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Preset"
+          }
+        }
+      }
+    },
+    "프리셋 이름": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preset Name"
+          }
+        }
+      }
+    },
+    "프리셋 편집": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Preset"
+          }
+        }
+      }
+    },
+    "프리셋과 앱 규칙 %lld개 삭제": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Preset and %lld App Rules"
+          }
+        }
+      }
+    },
+    "프리셋만 삭제": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Preset Only"
+          }
+        }
+      }
+    },
+    "프리셋을 선택해주세요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a preset"
+          }
+        }
+      }
+    },
+    "프리셋이 없어요. 오른쪽에서 다시 골라 주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No preset. Choose one on the right."
+          }
+        }
+      }
+    },
+    "허용": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow"
+          }
+        }
+      }
+    },
+    "현재 값으로 채우기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill In Current Values"
+          }
+        }
+      }
+    },
+    "현재 값을 내 기본값으로 저장": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Current Values as My Defaults"
+          }
+        }
+      }
+    },
+    "현재 설정을 프리셋으로 저장": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Current Settings as Preset"
+          }
+        }
+      }
+    },
+    "회전": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotation"
+          }
+        }
+      }
+    },
+    "회전 방향": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotation"
+          }
+        }
+      }
+    },
+    "회전하려면 손쉬운 사용 권한이 필요해요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotation needs Accessibility permission"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

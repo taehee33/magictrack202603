@@ -9,17 +9,17 @@ enum SwitchMode: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .auto: return "자동"
-        case .lockInternal: return "내장 고정"
-        case .lockMagic: return "매직 고정"
+        case .auto: return String(localized: "자동")
+        case .lockInternal: return String(localized: "내장 고정")
+        case .lockMagic: return String(localized: "매직 고정")
         }
     }
 
     var shortName: String {
         switch self {
-        case .auto: return "자동"
-        case .lockInternal: return "내장"
-        case .lockMagic: return "매직"
+        case .auto: return String(localized: "자동")
+        case .lockInternal: return String(localized: "내장")
+        case .lockMagic: return String(localized: "매직")
         }
     }
 

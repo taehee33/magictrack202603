@@ -256,6 +256,60 @@ extension Notification.Name {
     static let showSettingsTab = Notification.Name("showSettingsTab")
 }
 
+// MARK: - AppLanguage
+// 앱 화면 언어 (한국어 / English). 기본은 시스템 언어와 상관없이 한국어.
+// macOS의 앱별 언어 설정(AppleLanguages, 시스템 설정 › 일반 › 언어 및 지역 › 앱)과 같은 값을 쓴다. 바꾸면 다시 시작해야 적용된다
+
+enum AppLanguage: String, CaseIterable, Identifiable {
+    case korean = "ko"
+    case english = "en"
+
+    private static let preferenceKey = "AppleLanguages"
+
+    var id: String { rawValue }
+
+    /// 언어 이름은 그 언어로 보여준다
+    var nativeName: String {
+        switch self {
+        case .korean: return "한국어"
+        case .english: return "English"
+        }
+    }
+
+    /// 이 앱에 저장된 언어 (없으면 한국어)
+    static var selected: AppLanguage {
+        let domain = Bundle.main.bundleIdentifier.flatMap { UserDefaults.standard.persistentDomain(forName: $0) }
+        let first = (domain?[preferenceKey] as? [String])?.first ?? ""
+        return first.hasPrefix("en") ? .english : .korean
+    }
+
+    /// 지금 화면에 쓰이는 언어
+    static var running: AppLanguage {
+        Bundle.main.preferredLocalizations.first?.hasPrefix("en") == true ? .english : .korean
+    }
+
+    /// 앱이 문구를 찾기 전에(앱 시작 직후) 부른다. 저장된 언어가 없으면 한국어로 고정한다
+    static func applyDefaultIfNeeded() {
+        let domain = Bundle.main.bundleIdentifier.flatMap { UserDefaults.standard.persistentDomain(forName: $0) }
+        if domain?[preferenceKey] == nil {
+            UserDefaults.standard.set([AppLanguage.korean.rawValue], forKey: preferenceKey)
+        }
+    }
+
+    static func select(_ language: AppLanguage) {
+        UserDefaults.standard.set([language.rawValue], forKey: preferenceKey)
+    }
+
+    /// 앱을 끄고 1초 뒤 다시 연다
+    static func relaunch() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/sh")
+        task.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", Bundle.main.bundlePath]
+        try? task.run()
+        NSApp.terminate(nil)
+    }
+}
+
 /// 개발자 모드: 켜면 트랙패드 탭에 장치·전환 로그 패널을 보여준다 (기본 꺼짐)
 enum DeveloperMode {
     static let key = "developer_mode"
@@ -274,7 +328,7 @@ enum AppInfo {
     }
 
     static var versionDescription: String {
-        "버전 \(shortVersion) (\(buildNumber))"
+        String(localized: "버전 \(shortVersion) (\(buildNumber))")
     }
 
     static var compactVersionDescription: String {

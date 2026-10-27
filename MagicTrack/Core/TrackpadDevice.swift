@@ -10,8 +10,8 @@ enum TrackpadType: String, Codable {
 
     var displayName: String {
         switch self {
-        case .internal: return "내장 트랙패드"
-        case .magicTrackpad: return "매직 트랙패드"
+        case .internal: return String(localized: "내장 트랙패드")
+        case .magicTrackpad: return String(localized: "매직 트랙패드")
         }
     }
 
@@ -38,9 +38,9 @@ enum TrackpadRotation: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .standard: return "기본"
-        case .left90: return "왼쪽 90°"
-        case .right90: return "오른쪽 90°"
+        case .standard: return String(localized: "기본")
+        case .left90: return String(localized: "왼쪽 90°")
+        case .right90: return String(localized: "오른쪽 90°")
         case .upsideDown: return "180°"
         }
     }
@@ -245,10 +245,10 @@ struct TrackpadDefaults: Equatable {
         defaults.set(clickPressure, forKey: TrackpadDevice.macDefaultKey(for: type, suffix: "clickPressure"))
     }
 
-    static let clickPressureLabels = ["가볍게", "보통", "단단하게"]
+    static let clickPressureLabels = [String(localized: "가볍게"), String(localized: "보통"), String(localized: "단단하게")]
 
     var summary: String {
-        "이동 \(Int(trackingSpeed))칸 · 스크롤 \(Int(scrollSpeed))칸 · 클릭 \(Self.clickPressureLabels[clickPressure.clamped(to: 0...2)])"
+        String(localized: "이동 \(Int(trackingSpeed))칸 · 스크롤 \(Int(scrollSpeed))칸 · 클릭 \(Self.clickPressureLabels[clickPressure.clamped(to: 0...2)])")
     }
 }
 

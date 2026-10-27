@@ -94,7 +94,7 @@ struct TrackpadIllustration: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    Text(type == .internal ? "내장" : "BT")
+                    Text(type == .internal ? String(localized: "내장") : "BT")
                         .font(.system(size: 9, weight: .semibold, design: .monospaced))
                         .foregroundStyle(.tertiary)
                         .padding(4)

@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var loginItemError: String?
     @State private var showResetPresetsConfirm = false
     @State private var showAddAppRuleSheet = false
+    @State private var language = AppLanguage.selected
 
     var body: some View {
         Form {
@@ -63,6 +64,33 @@ struct SettingsView: View {
                 Text(visibilityDescription)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+            }
+
+            Section("언어") {
+                Picker("언어", selection: Binding(
+                    get: { language },
+                    set: { newValue in
+                        language = newValue
+                        AppLanguage.select(newValue)
+                    }
+                )) {
+                    ForEach(AppLanguage.allCases) { option in
+                        Text(verbatim: option.nativeName).tag(option)
+                    }
+                }
+
+                if language != AppLanguage.running {
+                    HStack {
+                        Text("다시 시작하면 바뀐 언어로 보여요.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.orange)
+                        Spacer()
+                        Button("지금 다시 시작") {
+                            AppLanguage.relaunch()
+                        }
+                        .controlSize(.small)
+                    }
+                }
             }
 
             Section("트랙패드 전환") {
@@ -112,8 +140,9 @@ struct SettingsView: View {
                     Button("취소", role: .cancel) {}
                 } message: {
                     let lostRules = presetManager.rulesLostOnReset()
-                    Text("직접 만들거나 고친 프리셋이 모두 지워지고 기본 프리셋 4개로 돌아가요. 되돌릴 수 없어요."
-                         + (lostRules > 0 ? " 직접 만든 프리셋을 쓰는 앱 규칙 \(lostRules)개는 ‘프리셋 없음’이 돼요." : ""))
+                    Text(lostRules > 0
+                         ? String(localized: "직접 만들거나 고친 프리셋이 모두 지워지고 기본 프리셋 4개로 돌아가요. 되돌릴 수 없어요. 직접 만든 프리셋을 쓰는 앱 규칙 \(lostRules)개는 ‘프리셋 없음’이 돼요.")
+                         : String(localized: "직접 만들거나 고친 프리셋이 모두 지워지고 기본 프리셋 4개로 돌아가요. 되돌릴 수 없어요."))
                 }
             }
 
@@ -209,8 +238,8 @@ struct SettingsView: View {
             loginItemError = nil
         } catch {
             loginItemError = enabled
-                ? "자동 시작을 켜지 못했어요: \(error.localizedDescription)"
-                : "자동 시작을 끄지 못했어요: \(error.localizedDescription)"
+                ? String(localized: "자동 시작을 켜지 못했어요: \(error.localizedDescription)")
+                : String(localized: "자동 시작을 끄지 못했어요: \(error.localizedDescription)")
         }
         refreshLoginItemStatus()
     }
@@ -222,13 +251,13 @@ struct SettingsView: View {
     private var visibilityDescription: String {
         switch (showDockIcon, showMenuBarIcon) {
         case (true, true):
-            return "실행 중일 때 Dock과 메뉴바에 함께 표시됩니다."
+            return String(localized: "실행 중일 때 Dock과 메뉴바에 함께 표시됩니다.")
         case (true, false):
-            return "Dock에만 표시됩니다."
+            return String(localized: "Dock에만 표시됩니다.")
         case (false, true):
-            return "메뉴바에만 표시됩니다."
+            return String(localized: "메뉴바에만 표시됩니다.")
         case (false, false):
-            return "앱 접근성을 위해 Dock 또는 메뉴바 중 하나는 항상 유지됩니다."
+            return String(localized: "앱 접근성을 위해 Dock 또는 메뉴바 중 하나는 항상 유지됩니다.")
         }
     }
 }
@@ -257,7 +286,7 @@ private struct ShortcutRecorder: View {
 
     private var label: String {
         if !isRecording { return hotKeys.shortcut.displayString }
-        return showsRejected ? "⌃ 또는 ⌘와 함께" : "키를 누르세요…"
+        return showsRejected ? String(localized: "⌃ 또는 ⌘와 함께") : String(localized: "키를 누르세요…")
     }
 
     private func startRecording() {

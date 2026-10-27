@@ -29,8 +29,14 @@ struct PresetEditorSheet: View {
         self.presetManager = presetManager
         self.isNew = target.isNew
         self.onDismiss = onDismiss
-        _draft = State(initialValue: target.preset)
+        var preset = target.preset
+        originalName = preset.name
+        preset.name = preset.displayName
+        _draft = State(initialValue: preset)
     }
+
+    /// 기본 프리셋은 저장 이름(한국어)과 보이는 이름이 다를 수 있다. 이름을 안 고쳤으면 저장 이름을 그대로 둔다
+    private let originalName: String
 
     private var trimmedName: String {
         draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -38,7 +44,7 @@ struct PresetEditorSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(isNew ? "새 프리셋" : "프리셋 편집")
+            Text(isNew ? String(localized: "새 프리셋") : String(localized: "프리셋 편집"))
                 .font(.system(size: 16, weight: .bold))
 
             HStack(spacing: 10) {
@@ -80,7 +86,7 @@ struct PresetEditorSheet: View {
                     .keyboardShortcut(.cancelAction)
                 Button("저장") {
                     var preset = draft
-                    preset.name = trimmedName
+                    preset.name = trimmedName == TrackpadPreset(name: originalName).displayName ? originalName : trimmedName
                     presetManager.save(preset)
                     onDismiss()
                 }
@@ -129,7 +135,7 @@ struct PresetEditorSheet: View {
         }
     }
 
-    private func deviceSection(_ type: TrackpadType, title: String, icon: String, color: Color) -> some View {
+    private func deviceSection(_ type: TrackpadType, title: LocalizedStringKey, icon: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Label(title, systemImage: icon)
                 .font(.system(size: 12, weight: .semibold))
@@ -170,7 +176,7 @@ struct PresetEditorSheet: View {
         .background(RoundedRectangle(cornerRadius: 10).fill(color.opacity(0.06)))
     }
 
-    private func valueSlider(_ label: String, keyPath: WritableKeyPath<TrackpadDefaults, Double>, range: ClosedRange<Double>,
+    private func valueSlider(_ label: LocalizedStringKey, keyPath: WritableKeyPath<TrackpadDefaults, Double>, range: ClosedRange<Double>,
                              type: TrackpadType, color: Color) -> some View {
         let binding = valueBinding(keyPath, type: type)
         return VStack(alignment: .leading, spacing: 2) {

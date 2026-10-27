@@ -73,7 +73,7 @@ struct MenuBarView: View {
                             HStack(spacing: 4) {
                                 Text(preset.emoji)
                                     .font(.system(size: 12))
-                                Text(preset.name)
+                                Text(preset.displayName)
                                     .font(.system(size: 11, weight: .medium))
                             }
                             .padding(.horizontal, 8)
@@ -214,7 +214,7 @@ struct MenuBarView: View {
 }
 
 private struct CompactDeviceSection: View {
-    let title: String
+    let title: LocalizedStringKey
     let icon: String
     let accentColor: Color
     @ObservedObject var device: TrackpadDevice
@@ -307,13 +307,13 @@ private struct CompactDeviceSection: View {
     }
 
     private var statusText: String {
-        guard device.isConnected else { return "연결 없음" }
-        return isActive ? "사용 중" : "연결됨"
+        guard device.isConnected else { return String(localized: "연결 없음") }
+        return isActive ? String(localized: "사용 중") : String(localized: "연결됨")
     }
 }
 
 private struct CompactSliderRow: View {
-    let label: String
+    let label: LocalizedStringKey
     @Binding var value: Double
     let range: ClosedRange<Double>
     let color: Color
@@ -406,9 +406,9 @@ private struct CompactRotationRow: View {
 
     private func title(_ rotation: TrackpadRotation) -> String {
         switch rotation {
-        case .standard: return "기본"
-        case .left90: return "좌 90"
-        case .right90: return "우 90"
+        case .standard: return String(localized: "기본")
+        case .left90: return String(localized: "좌 90")
+        case .right90: return String(localized: "우 90")
         case .upsideDown: return "180"
         }
     }

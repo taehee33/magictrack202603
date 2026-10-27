@@ -4,7 +4,7 @@ import SwiftUI
 // 트랙패드 유형별 색상을 가진 커스텀 슬라이더
 
 struct SensitivitySlider: View {
-    let label: String
+    let label: LocalizedStringKey
     let systemImage: String
     @Binding var value: Double
     let range: ClosedRange<Double>
@@ -156,7 +156,7 @@ struct ClickPressureSelector: View {
     let accentColor: Color
     let onChange: (Int) -> Void
 
-    private let levels = ["가볍게", "보통", "단단하게"]
+    private let levels = TrackpadDefaults.clickPressureLabels
     private let icons = ["hand.tap", "hand.tap.fill", "hand.tap"]
 
     var body: some View {

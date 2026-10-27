@@ -25,6 +25,14 @@ struct MainView: View {
         case presets = "프리셋"
         case settings = "설정"
 
+        var title: String {
+            switch self {
+            case .devices: return String(localized: "트랙패드")
+            case .presets: return String(localized: "프리셋")
+            case .settings: return String(localized: "설정")
+            }
+        }
+
         var icon: String {
             switch self {
             case .devices: return "rectangle.roundedtop.fill"
@@ -167,7 +175,7 @@ struct MainView: View {
                     HStack(spacing: 6) {
                         Image(systemName: tab.icon)
                             .font(.system(size: 12))
-                        Text(tab.rawValue)
+                        Text(tab.title)
                             .font(.system(size: 12, weight: .medium))
                     }
                     .foregroundStyle(selectedTab == tab ? .primary : .secondary)
@@ -337,7 +345,7 @@ struct MainView: View {
                 }
             }
 
-            Text("TOUCH는 새 터치가 시작된 횟수, ACTIVATE는 프로필이 적용된 횟수예요. 터치 감지 \(trackpadManager.autoSwitchAvailable ? "사용 가능" : "사용 불가")")
+            Text("TOUCH는 새 터치가 시작된 횟수, ACTIVATE는 프로필이 적용된 횟수예요. 터치 감지 \(trackpadManager.autoSwitchAvailable ? String(localized: "사용 가능") : String(localized: "사용 불가"))")
                 .font(.system(size: 10))
                 .foregroundStyle(.secondary)
 
@@ -360,7 +368,7 @@ struct MainView: View {
                                 .frame(width: 64, alignment: .leading)
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("\(log.trackpadType?.displayName ?? "미분류") · \(log.deviceName)")
+                                Text("\(log.trackpadType?.displayName ?? String(localized: "미분류")) · \(log.deviceName)")
                                     .font(.system(size: 11, weight: .medium))
                                 if !log.detail.isEmpty {
                                     Text(log.detail)
@@ -463,7 +471,7 @@ struct MainView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(color)
             }
-            .help(trackpadManager.lastActiveSwitchAt.map { "마지막 전환 \($0.formatted(date: .omitted, time: .standard))" } ?? "")
+            .help(trackpadManager.lastActiveSwitchAt.map { String(localized: "마지막 전환 \($0.formatted(date: .omitted, time: .standard))") } ?? "")
         } else {
             Text("연결된 트랙패드 없음")
                 .font(.system(size: 12))
@@ -474,11 +482,11 @@ struct MainView: View {
     private var switchModeDescription: String {
         switch trackpadManager.switchMode {
         case .auto where !trackpadManager.autoSwitchAvailable:
-            return "자동 감지를 쓸 수 없어 마지막 설정으로 고정돼요"
+            return String(localized: "자동 감지를 쓸 수 없어 마지막 설정으로 고정돼요")
         case .auto:
-            return "손가락이 닿은 트랙패드의 설정으로 바로 바뀌어요"
+            return String(localized: "손가락이 닿은 트랙패드의 설정으로 바로 바뀌어요")
         case .lockInternal, .lockMagic:
-            return "어느 트랙패드를 써도 \(trackpadManager.switchMode.lockedType?.displayName ?? "") 설정을 유지해요"
+            return String(localized: "어느 트랙패드를 써도 \(trackpadManager.switchMode.lockedType?.displayName ?? "") 설정을 유지해요")
         }
     }
 
@@ -531,7 +539,7 @@ struct MainView: View {
             .padding(.bottom, 20)
         }
         .confirmationDialog(
-            deletingPreset.map { "‘\($0.emoji) \($0.name)’ 프리셋을 삭제할까요?" } ?? "",
+            deletingPreset.map { String(localized: "‘\($0.emoji) \($0.displayName)’ 프리셋을 삭제할까요?") } ?? "",
             isPresented: Binding(get: { deletingPreset != nil }, set: { if !$0 { deletingPreset = nil } }),
             presenting: deletingPreset
         ) { preset in
@@ -552,8 +560,8 @@ struct MainView: View {
         } message: { preset in
             let ruleCount = appSwitcherManager.rules(usingPreset: preset.id).count
             Text(ruleCount > 0
-                 ? "이 프리셋을 쓰는 앱 규칙이 \(ruleCount)개 있어요. 프리셋만 지우면 그 규칙은 ‘프리셋 없음’으로 남아요. 되돌릴 수 없어요."
-                 : "되돌릴 수 없어요.")
+                 ? String(localized: "이 프리셋을 쓰는 앱 규칙이 \(ruleCount)개 있어요. 프리셋만 지우면 그 규칙은 ‘프리셋 없음’으로 남아요. 되돌릴 수 없어요.")
+                 : String(localized: "되돌릴 수 없어요."))
         }
     }
 
@@ -665,7 +673,7 @@ struct BluetoothDevicePickerSheet: View {
                                     HStack(spacing: 6) {
                                         Text(device.name)
                                             .font(.system(size: 13, weight: .semibold))
-                                        Text(device.kind.rawValue)
+                                        Text(device.kind.displayName)
                                             .font(.system(size: 10, weight: .medium))
                                             .foregroundStyle(device.kind == .trackpad ? .purple : .orange)
                                             .padding(.horizontal, 6)
@@ -677,7 +685,7 @@ struct BluetoothDevicePickerSheet: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                Button(trackpadManager.preferredBluetoothDeviceKey == device.id ? "선택됨" : "선택") {
+                                Button(trackpadManager.preferredBluetoothDeviceKey == device.id ? String(localized: "선택됨") : String(localized: "선택")) {
                                     if trackpadManager.preferredBluetoothDeviceKey != device.id {
                                         trackpadManager.setPreferredBluetoothDevice(key: device.id)
                                         onDismiss()
@@ -725,7 +733,7 @@ struct PresetCardView: View {
                     .font(.system(size: 22))
 
                 HStack(spacing: 6) {
-                    Text(preset.name)
+                    Text(preset.displayName)
                         .font(.system(size: 13, weight: .semibold))
                     if isActive {
                         Image(systemName: "checkmark.circle.fill")
@@ -826,9 +834,9 @@ struct AppRuleRow: View {
             }
             Spacer()
             // 적용할 프리셋 바꾸기 (프리셋이 지워진 규칙도 여기서 고친다)
-            Menu(preset.map { "\($0.emoji) \($0.name)" } ?? "프리셋 고르기") {
+            Menu(preset.map { "\($0.emoji) \($0.displayName)" } ?? String(localized: "프리셋 고르기")) {
                 ForEach(presetManager.presets) { option in
-                    Button("\(option.emoji) \(option.name)") { onChangePreset(option.id) }
+                    Button(String("\(option.emoji) \(option.displayName)")) { onChangePreset(option.id) }
                 }
             }
             .fixedSize()
@@ -927,7 +935,7 @@ struct AddAppRuleSheet: View {
                                 HStack(spacing: 10) {
                                     Text(preset.emoji)
                                         .font(.system(size: 18))
-                                    Text(preset.name)
+                                    Text(preset.displayName)
                                         .font(.system(size: 13, weight: .medium))
                                     Spacer()
                                     if selectedPresetID == preset.id {
@@ -995,7 +1003,7 @@ struct AddAppRuleSheet: View {
 
     private func pickApplication() {
         let panel = NSOpenPanel()
-        panel.title = "앱 선택"
+        panel.title = String(localized: "앱 선택")
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false

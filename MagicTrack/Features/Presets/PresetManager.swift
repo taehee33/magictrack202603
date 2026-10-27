@@ -43,6 +43,18 @@ struct TrackpadPreset: Codable, Identifiable, Equatable {
         self.magicRotation = magicRotation
     }
 
+    /// 화면에 보일 이름. 기본 프리셋 이름은 저장값(한국어)을 그대로 두고 언어에 맞게 보여준다
+    /// (이름으로 순서·초기화 연결을 맞추므로 저장값은 바꾸지 않는다)
+    var displayName: String {
+        switch name {
+        case "일반": return String(localized: "일반", comment: "기본 프리셋 이름")
+        case "코딩": return String(localized: "코딩", comment: "기본 프리셋 이름")
+        case "디자인": return String(localized: "디자인", comment: "기본 프리셋 이름")
+        case "게임": return String(localized: "게임", comment: "기본 프리셋 이름")
+        default: return name
+        }
+    }
+
     /// 장치별 이동·스크롤·클릭 압력 값
     func values(for type: TrackpadType) -> TrackpadDefaults {
         switch type {
@@ -184,7 +196,7 @@ final class PresetManager: ObservableObject {
     func duplicatePreset(id: UUID) -> TrackpadPreset? {
         guard let index = presets.firstIndex(where: { $0.id == id }) else { return nil }
         let source = presets[index]
-        var copy = TrackpadPreset(name: "\(source.name) 사본", emoji: source.emoji, magicRotation: source.magicRotation)
+        var copy = TrackpadPreset(name: String(localized: "\(source.displayName) 사본"), emoji: source.emoji, magicRotation: source.magicRotation)
         copy.setValues(source.values(for: .internal), for: .internal)
         copy.setValues(source.values(for: .magicTrackpad), for: .magicTrackpad)
         presets.insert(copy, at: index + 1)

@@ -69,7 +69,7 @@ struct TrackpadCardView: View {
                 if let preset = activePreset {
                     let modified = preset.differs(from: device)
                     HStack(spacing: 4) {
-                        Text("\(preset.emoji) \(preset.name)")
+                        Text(verbatim: "\(preset.emoji) \(preset.displayName)")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(accentColor)
                         if modified {
@@ -79,7 +79,7 @@ struct TrackpadCardView: View {
                         }
                     }
                     .lineLimit(1)
-                    .help(modified ? "이 트랙패드 값이 프리셋과 달라요. 프리셋 탭에서 편집 › ‘현재 값으로 채우기’로 덮어쓸 수 있어요." : "지금 적용된 프리셋")
+                    .help(modified ? String(localized: "이 트랙패드 값이 프리셋과 달라요. 프리셋 탭에서 편집 › ‘현재 값으로 채우기’로 덮어쓸 수 있어요.") : String(localized: "지금 적용된 프리셋"))
                 } else {
                     Text(String(format: "%.0f", device.trackingSpeed))
                         .font(.system(size: 20, weight: .bold, design: .rounded))
@@ -144,8 +144,8 @@ struct TrackpadCardView: View {
                             RevertMenu(
                                 accentColor: accentColor,
                                 disabled: !device.isConnected,
-                                myValue: "\(Int(device.myDefaults.trackingSpeed))칸",
-                                macValue: "\(Int(TrackpadDefaults.mac.trackingSpeed))칸",
+                                myValue: String(localized: "\(Int(device.myDefaults.trackingSpeed))칸"),
+                                macValue: String(localized: "\(Int(TrackpadDefaults.mac.trackingSpeed))칸"),
                                 isMyValue: device.trackingSpeed == device.myDefaults.trackingSpeed,
                                 isMacValue: device.trackingSpeed == TrackpadDefaults.mac.trackingSpeed
                             ) {
@@ -177,8 +177,8 @@ struct TrackpadCardView: View {
                             RevertMenu(
                                 accentColor: accentColor,
                                 disabled: !device.isConnected,
-                                myValue: "\(Int(device.myDefaults.scrollSpeed))칸",
-                                macValue: "\(Int(TrackpadDefaults.mac.scrollSpeed))칸",
+                                myValue: String(localized: "\(Int(device.myDefaults.scrollSpeed))칸"),
+                                macValue: String(localized: "\(Int(TrackpadDefaults.mac.scrollSpeed))칸"),
                                 isMyValue: device.scrollSpeed == device.myDefaults.scrollSpeed,
                                 isMacValue: device.scrollSpeed == TrackpadDefaults.mac.scrollSpeed
                             ) {
@@ -353,9 +353,9 @@ private struct RotationSelector: View {
 
     private func rotationButtonTitle(_ rotation: TrackpadRotation) -> String {
         switch rotation {
-        case .standard: return "기본"
-        case .left90: return "좌 90"
-        case .right90: return "우 90"
+        case .standard: return String(localized: "기본")
+        case .left90: return String(localized: "좌 90")
+        case .right90: return String(localized: "우 90")
         case .upsideDown: return "180"
         }
     }
@@ -459,7 +459,7 @@ struct RotationStatusView: View {
                 .font(.system(size: compact ? 11 : 10, weight: .medium))
                 .foregroundStyle(.secondary)
         } else {
-            Label(engine.isRunning ? "포인터·스크롤·드래그가 회전돼요 (제스처는 제외, 손쉬운 사용 권한 사용)" : "매직 트랙패드를 돌려 놓고 쓸 때 방향을 맞춰요",
+            Label(engine.isRunning ? String(localized: "포인터·스크롤·드래그가 회전돼요 (제스처는 제외, 손쉬운 사용 권한 사용)") : String(localized: "매직 트랙패드를 돌려 놓고 쓸 때 방향을 맞춰요"),
                   systemImage: engine.isRunning ? "checkmark.circle" : "info.circle")
                 .font(.system(size: compact ? 11 : 10, weight: .medium))
                 .foregroundStyle(.secondary)

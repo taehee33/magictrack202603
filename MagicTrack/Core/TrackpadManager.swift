@@ -8,6 +8,13 @@ import Combine
 enum BluetoothDeviceKind: String {
     case trackpad = "트랙패드"
     case mouse = "마우스"
+
+    var displayName: String {
+        switch self {
+        case .trackpad: return String(localized: "트랙패드")
+        case .mouse: return String(localized: "마우스")
+        }
+    }
 }
 
 struct BluetoothHIDDevice: Identifiable {
