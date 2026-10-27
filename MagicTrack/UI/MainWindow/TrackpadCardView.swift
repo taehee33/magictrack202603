@@ -76,6 +76,8 @@ struct TrackpadCardView: View {
                         .foregroundStyle(accentColor)
                 }
 
+                defaultsMenu
+
                 // 펼치기/접기 버튼
                 Button {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
@@ -148,8 +150,18 @@ struct TrackpadCardView: View {
                                 onChange: { _ in }
                             )
                             .disabled(!device.isConnected)
-                            ResetButton(accentColor: accentColor, disabled: !device.isConnected) {
-                                device.trackingSpeed = TrackpadDevice.defaultTrackingSpeed(for: device.type)
+                            RevertMenu(
+                                accentColor: accentColor,
+                                disabled: !device.isConnected,
+                                myValue: "\(Int(device.myDefaults.trackingSpeed))칸",
+                                macValue: "\(Int(TrackpadDefaults.mac.trackingSpeed))칸",
+                                isMyValue: device.trackingSpeed == device.myDefaults.trackingSpeed,
+                                isMacValue: device.trackingSpeed == TrackpadDefaults.mac.trackingSpeed
+                            ) {
+                                device.trackingSpeed = device.myDefaults.trackingSpeed
+                                onSettingChange()
+                            } onMac: {
+                                device.trackingSpeed = TrackpadDefaults.mac.trackingSpeed
                                 onSettingChange()
                             }
                         }
@@ -171,8 +183,18 @@ struct TrackpadCardView: View {
                                 onChange: { _ in }
                             )
                             .disabled(!device.isConnected)
-                            ResetButton(accentColor: accentColor, disabled: !device.isConnected) {
-                                device.scrollSpeed = TrackpadDevice.defaultScrollSpeed(for: device.type)
+                            RevertMenu(
+                                accentColor: accentColor,
+                                disabled: !device.isConnected,
+                                myValue: "\(Int(device.myDefaults.scrollSpeed))칸",
+                                macValue: "\(Int(TrackpadDefaults.mac.scrollSpeed))칸",
+                                isMyValue: device.scrollSpeed == device.myDefaults.scrollSpeed,
+                                isMacValue: device.scrollSpeed == TrackpadDefaults.mac.scrollSpeed
+                            ) {
+                                device.scrollSpeed = device.myDefaults.scrollSpeed
+                                onSettingChange()
+                            } onMac: {
+                                device.scrollSpeed = TrackpadDefaults.mac.scrollSpeed
                                 onSettingChange()
                             }
                         }
@@ -190,8 +212,18 @@ struct TrackpadCardView: View {
                                 onChange: { _ in }
                             )
                             .disabled(!device.isConnected)
-                            ResetButton(accentColor: accentColor, disabled: !device.isConnected) {
-                                device.clickPressure = TrackpadDevice.defaultClickPressure(for: device.type)
+                            RevertMenu(
+                                accentColor: accentColor,
+                                disabled: !device.isConnected,
+                                myValue: pressureLabel(device.myDefaults.clickPressure),
+                                macValue: pressureLabel(TrackpadDefaults.mac.clickPressure),
+                                isMyValue: device.clickPressure == device.myDefaults.clickPressure,
+                                isMacValue: device.clickPressure == TrackpadDefaults.mac.clickPressure
+                            ) {
+                                device.clickPressure = device.myDefaults.clickPressure
+                                onSettingChange()
+                            } onMac: {
+                                device.clickPressure = TrackpadDefaults.mac.clickPressure
                                 onSettingChange()
                             }
                         }
@@ -211,7 +243,7 @@ struct TrackpadCardView: View {
                                     )
                                     .disabled(!device.isConnected)
 
-                                    ResetButton(accentColor: accentColor, disabled: !device.isConnected, showsMacDefaultLabel: false) {
+                                    ResetButton(accentColor: accentColor, disabled: !device.isConnected) {
                                         device.rotation = .standard
                                         onSettingChange()
                                     }
@@ -236,6 +268,48 @@ struct TrackpadCardView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(accentColor.opacity(0.12), lineWidth: 1)
         )
+    }
+
+    /// 카드 전체 되돌리기와 내 기본값 저장 (회전은 제외)
+    private var defaultsMenu: some View {
+        let current = TrackpadDefaults(trackingSpeed: device.trackingSpeed, scrollSpeed: device.scrollSpeed, clickPressure: device.clickPressure)
+        return Menu {
+            Section("내 기본값: \(device.myDefaults.summary)") {
+                Button("모두 내 기본값으로") {
+                    device.apply(device.myDefaults)
+                    onSettingChange()
+                }
+                .disabled(current == device.myDefaults)
+                Button("현재 값을 내 기본값으로 저장") {
+                    device.saveAsMyDefaults()
+                }
+                .disabled(current == device.myDefaults)
+            }
+            Section("Mac 기본값: \(TrackpadDefaults.mac.summary)") {
+                Button("모두 Mac 기본값으로") {
+                    device.apply(.mac)
+                    onSettingChange()
+                }
+                .disabled(current == .mac)
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(.primary.opacity(0.06)))
+                .contentShape(Circle())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .disabled(!device.isConnected)
+        .help("기본값 되돌리기 · 내 기본값 저장")
+    }
+
+    private func pressureLabel(_ value: Int) -> String {
+        TrackpadDefaults.clickPressureLabels[value.clamped(to: 0...2)]
     }
 
     private var activeStatusText: String {
@@ -302,40 +376,81 @@ private struct RotationSelector: View {
     }
 }
 
-// MARK: - ResetButton (항목별 기본값 초기화)
+// MARK: - RevertMenu (항목별 기본값 되돌리기: 내 기본값 / Mac 기본값)
+
+private struct RevertMenu: View {
+    let accentColor: Color
+    let disabled: Bool
+    let myValue: String
+    let macValue: String
+    let isMyValue: Bool
+    let isMacValue: Bool
+    let onMine: () -> Void
+    let onMac: () -> Void
+
+    var body: some View {
+        Menu {
+            Button("내 기본값으로 · \(myValue)", action: onMine)
+                .disabled(isMyValue)
+            Button("Mac 기본값으로 · \(macValue)", action: onMac)
+                .disabled(isMacValue)
+        } label: {
+            ResetLabel(accentColor: accentColor, disabled: disabled, showsChevron: true)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .disabled(disabled)
+        .help("기본값으로 되돌리기")
+        .accessibilityLabel("기본값으로 되돌리기")
+    }
+}
+
+// MARK: - ResetButton (회전처럼 기본값이 하나뿐인 항목)
 
 private struct ResetButton: View {
     let accentColor: Color
     let disabled: Bool
-    var showsMacDefaultLabel: Bool = true
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 12, weight: .medium))
-                Text("기본값")
-                    .font(.system(size: 11, weight: .medium))
-                if showsMacDefaultLabel {
-                    Text("(맥 설정 값)")
-                        .font(.system(size: 10, weight: .medium))
-                }
-            }
-            .foregroundStyle(disabled ? Color(nsColor: .tertiaryLabelColor) : accentColor)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .frame(height: 28)
-            .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.05)))
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(disabled ? Color.primary.opacity(0.12) : accentColor.opacity(0.35), lineWidth: 1)
-            )
-            .contentShape(Rectangle())
+            ResetLabel(accentColor: accentColor, disabled: disabled, showsChevron: false)
         }
         .buttonStyle(.plain)
         .disabled(disabled)
-        .help("기본값으로 초기화")
+        .help("기본값으로 되돌리기")
+    }
+}
+
+private struct ResetLabel: View {
+    let accentColor: Color
+    let disabled: Bool
+    let showsChevron: Bool
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "arrow.counterclockwise")
+                .font(.system(size: 12, weight: .medium))
+            Text("기본값")
+                .font(.system(size: 11, weight: .medium))
+            if showsChevron {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8, weight: .bold))
+            }
+        }
+        .foregroundStyle(disabled ? Color(nsColor: .tertiaryLabelColor) : accentColor)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .frame(height: 28)
+        .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.05)))
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(disabled ? Color.primary.opacity(0.12) : accentColor.opacity(0.35), lineWidth: 1)
+        )
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 }
 

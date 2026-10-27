@@ -71,9 +71,11 @@ final class TrackpadDevice: ObservableObject, Identifiable {
     @Published var scrollSpeed: Double        // 시스템 손쉬운 사용 '스크롤 속도' 슬라이더 칸 1 ~ 8
     @Published var clickPressure: Int         // 0 ~ 2 (Light / Medium / Firm)
     @Published var rotation: TrackpadRotation
+    @Published private(set) var myDefaults: TrackpadDefaults
 
     static let trackingRange: ClosedRange<Double> = 1...Double(SpeedScale.trackingStops.count)
     static let scrollRange: ClosedRange<Double> = 1...Double(SpeedScale.scrollStops.count)
+    /// 내 기본값 저장 키. v1.2.0까지 '맥 설정 값'으로 쓰던 키를 그대로 이어 쓴다
     private static let macDefaultPrefix = "mac_default_"
 
     init(
@@ -119,6 +121,7 @@ final class TrackpadDevice: ObservableObject, Identifiable {
         } else {
             self.rotation = .standard
         }
+        self.myDefaults = TrackpadDefaults.mine(for: type)
     }
 
     func saveSettings() {
@@ -129,7 +132,22 @@ final class TrackpadDevice: ObservableObject, Identifiable {
         UserDefaults.standard.set(rotation.rawValue, forKey: key + "rotation")
     }
 
-    // MARK: - 기본값 (초기화 버튼용)
+    // MARK: - 기본값 (되돌리기 메뉴용)
+    // 내 기본값: 장치별로 사용자가 저장한 기준값. 처음 실행할 때 그때의 시스템 설정 값으로 채운다
+    // Mac 기본값: Apple 출고 기본값 (이동 4칸 · 스크롤 4칸 · 클릭 보통). 고정
+
+    func saveAsMyDefaults() {
+        let defaults = TrackpadDefaults(trackingSpeed: trackingSpeed, scrollSpeed: scrollSpeed, clickPressure: clickPressure)
+        defaults.save(for: type)
+        myDefaults = defaults
+    }
+
+    /// 이동·스크롤·클릭 압력만 바꾼다. 회전은 트랙패드를 놓은 방향이라 그대로 둔다
+    func apply(_ defaults: TrackpadDefaults) {
+        trackingSpeed = defaults.trackingSpeed
+        scrollSpeed = defaults.scrollSpeed
+        clickPressure = defaults.clickPressure
+    }
 
     static func defaultTrackingSpeed(for type: TrackpadType) -> Double {
         UserDefaults.standard.object(forKey: macDefaultKey(for: type, suffix: "trackingSpeed")) != nil
@@ -146,7 +164,7 @@ final class TrackpadDevice: ObservableObject, Identifiable {
     static func defaultClickPressure(for type: TrackpadType) -> Int {
         UserDefaults.standard.object(forKey: macDefaultKey(for: type, suffix: "clickPressure")) != nil
             ? UserDefaults.standard.integer(forKey: macDefaultKey(for: type, suffix: "clickPressure"))
-            : 1
+            : TrackpadDefaults.mac.clickPressure
     }
 
     static func ensureMacDefaultsCaptured() {
@@ -190,6 +208,42 @@ final class TrackpadDevice: ObservableObject, Identifiable {
 
     static func macDefaultKey(for type: TrackpadType, suffix: String) -> String {
         "\(macDefaultPrefix)\(type.rawValue)_\(suffix)"
+    }
+}
+
+// MARK: - TrackpadDefaults
+
+struct TrackpadDefaults: Equatable {
+    var trackingSpeed: Double
+    var scrollSpeed: Double
+    var clickPressure: Int
+
+    /// Apple 출고 기본값 (IOHIPointing.h, 시스템 설정 클릭 '보통')
+    static let mac = TrackpadDefaults(
+        trackingSpeed: SpeedScale.defaultTrackingStop,
+        scrollSpeed: SpeedScale.defaultScrollStop,
+        clickPressure: 1
+    )
+
+    static func mine(for type: TrackpadType) -> TrackpadDefaults {
+        TrackpadDefaults(
+            trackingSpeed: TrackpadDevice.defaultTrackingSpeed(for: type),
+            scrollSpeed: TrackpadDevice.defaultScrollSpeed(for: type),
+            clickPressure: TrackpadDevice.defaultClickPressure(for: type)
+        )
+    }
+
+    func save(for type: TrackpadType) {
+        let defaults = UserDefaults.standard
+        defaults.set(trackingSpeed, forKey: TrackpadDevice.macDefaultKey(for: type, suffix: "trackingSpeed"))
+        defaults.set(scrollSpeed, forKey: TrackpadDevice.macDefaultKey(for: type, suffix: "scrollSpeed"))
+        defaults.set(clickPressure, forKey: TrackpadDevice.macDefaultKey(for: type, suffix: "clickPressure"))
+    }
+
+    static let clickPressureLabels = ["가볍게", "보통", "단단하게"]
+
+    var summary: String {
+        "이동 \(Int(trackingSpeed))칸 · 스크롤 \(Int(scrollSpeed))칸 · 클릭 \(Self.clickPressureLabels[clickPressure.clamped(to: 0...2)])"
     }
 }
 

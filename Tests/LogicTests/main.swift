@@ -63,5 +63,25 @@ check(SpeedScale.trackingStop(forSystemValue: 5.0 * 0.3) == 7, "기존 앱 5 →
 check(SpeedScale.scrollValue(stop: 5) == 0.5 && SpeedScale.scrollStop(forSystemValue: 0.5) == 5, "스크롤 0.5 ↔ 5칸")
 check(SpeedScale.trackingValue(stop: 0) == 0 && SpeedScale.trackingValue(stop: 99) == 3, "범위 밖 칸은 양 끝으로")
 
+// MARK: - 내 기본값 / Mac 기본값
+
+check(TrackpadDefaults.mac == TrackpadDefaults(trackingSpeed: 4, scrollSpeed: 4, clickPressure: 1), "Mac 기본값 = 이동 4 · 스크롤 4 · 클릭 보통")
+check(TrackpadDefaults(trackingSpeed: 7, scrollSpeed: 5, clickPressure: 2).summary == "이동 7칸 · 스크롤 5칸 · 클릭 단단하게", "기본값 요약 문구")
+
+let myDefaultKeys = ["trackingSpeed", "scrollSpeed", "clickPressure"].map { TrackpadDevice.macDefaultKey(for: .magicTrackpad, suffix: $0) }
+let savedDefaults = myDefaultKeys.map { UserDefaults.standard.object(forKey: $0) }
+let internalBefore = TrackpadDefaults.mine(for: .internal)
+let pad = TrackpadDevice(hidDevice: nil, type: .magicTrackpad, productName: "테스트")
+pad.trackingSpeed = 8; pad.scrollSpeed = 6; pad.clickPressure = 0
+pad.saveAsMyDefaults()
+check(TrackpadDefaults.mine(for: .magicTrackpad) == TrackpadDefaults(trackingSpeed: 8, scrollSpeed: 6, clickPressure: 0), "현재 값을 내 기본값으로 저장 → 다시 읽어도 같음")
+check(TrackpadDefaults.mine(for: .internal) == internalBefore, "매직 기본값 저장은 내장 기본값을 바꾸지 않음")
+let rotated = TrackpadDevice(hidDevice: nil, type: .magicTrackpad, productName: "테스트")
+rotated.rotation = .left90
+rotated.apply(.mac)
+check(rotated.trackingSpeed == 4 && rotated.scrollSpeed == 4 && rotated.clickPressure == 1 && rotated.rotation == .left90, "Mac 기본값 적용은 회전을 건드리지 않음")
+check(rotated.myDefaults == pad.myDefaults, "새로 만든 장치도 저장된 내 기본값을 읽음")
+for (key, value) in zip(myDefaultKeys, savedDefaults) { UserDefaults.standard.set(value, forKey: key) }
+
 print(failures == 0 ? "\n모든 테스트 통과" : "\n실패 \(failures)건")
 exit(failures == 0 ? 0 : 1)
