@@ -1,5 +1,4 @@
 import AppKit
-import ServiceManagement
 import Carbon.HIToolbox
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -15,9 +14,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 전역 단축키 등록
         HotKeyManager.shared.registerToggleTrackpadHotKey()
-
-        // 로그인 시 자동 시작 등록
-        registerLoginItem()
 
         // 권한 확인
         PermissionManager.shared.checkPermissions()
@@ -43,17 +39,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.windows.first?.makeKeyAndOrderFront(nil)
         }
         return true
-    }
-
-    private func registerLoginItem() {
-        // macOS 13+ SMAppService 사용
-        if #available(macOS 13.0, *) {
-            // 사용자 설정에 따라 자동 시작 등록
-            let launchAtLogin = UserDefaults.standard.bool(forKey: "launchAtLogin")
-            if launchAtLogin {
-                try? SMAppService.mainApp.register()
-            }
-        }
     }
 
     @objc private func handleDockVisibilityChanged() {
@@ -136,6 +121,7 @@ final class HotKeyManager {
 
 extension Notification.Name {
     static let dockVisibilityChanged = Notification.Name("dockVisibilityChanged")
+    static let showSettingsTab = Notification.Name("showSettingsTab")
 }
 
 enum AppInfo {

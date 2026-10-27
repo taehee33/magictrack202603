@@ -8,27 +8,28 @@ struct MainView: View {
     @EnvironmentObject var trackpadManager: TrackpadManager
     @EnvironmentObject var presetManager: PresetManager
     @EnvironmentObject var appSwitcherManager: AppSwitcherManager
-    @AppStorage(AppVisibilityManager.showDockIconKey) private var showDockIcon = true
-    @AppStorage(AppVisibilityManager.showMenuBarIconKey) private var showMenuBarIcon = true
+
+    /// ⌘,로 창을 새로 열 때 설정 탭으로 시작하게 한다 (이미 열린 창은 알림으로 바꾼다)
+    static var opensSettingsOnAppear = false
 
     @State private var showSavePresetSheet = false
-    @State private var showAddAppRuleSheet = false
     @State private var showBluetoothPickerSheet = false
     @State private var newPresetName = ""
     @State private var newPresetEmoji = "⚡"
     @State private var selectedTab: Tab = .devices
     @State private var selectedDeviceType: TrackpadType = .internal
+    @State private var devicesTabWidth: CGFloat = 0
 
     enum Tab: String, CaseIterable {
         case devices = "트랙패드"
         case presets = "프리셋"
-        case appRules = "설정"
-        
+        case settings = "설정"
+
         var icon: String {
             switch self {
             case .devices: return "rectangle.roundedtop.fill"
             case .presets: return "slider.horizontal.3"
-            case .appRules: return "gearshape"
+            case .settings: return "gearshape"
             }
         }
     }
@@ -61,8 +62,8 @@ struct MainView: View {
                     devicesTab
                 case .presets:
                     presetsTab
-                case .appRules:
-                    appRulesTab
+                case .settings:
+                    SettingsView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -80,18 +81,21 @@ struct MainView: View {
         .sheet(isPresented: $showSavePresetSheet) {
             savePresetSheet
         }
-        .sheet(isPresented: $showAddAppRuleSheet) {
-            AddAppRuleSheet(
-                presetManager: presetManager,
-                appSwitcherManager: appSwitcherManager,
-                onDismiss: { showAddAppRuleSheet = false }
-            )
-        }
         .sheet(isPresented: $showBluetoothPickerSheet) {
             BluetoothDevicePickerSheet(
                 trackpadManager: trackpadManager,
                 onDismiss: { showBluetoothPickerSheet = false }
             )
+        }
+        .onAppear {
+            if Self.opensSettingsOnAppear {
+                Self.opensSettingsOnAppear = false
+                selectedTab = .settings
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showSettingsTab)) { _ in
+            Self.opensSettingsOnAppear = false
+            selectedTab = .settings
         }
     }
 
@@ -219,45 +223,17 @@ struct MainView: View {
                 devicePicker
                 capabilityNoticeCard
 
-                TrackpadCardView(
-                    device: internalDevice,
-                    accentColor: .blue,
-                    currentPresetLabel: presetManager.activePreset.map { "\($0.emoji) \($0.name)" },
-                    isCurrentlyActive: trackpadManager.activeTrackpadType == .internal,
-                    lastSwitchedAt: trackpadManager.activeTrackpadType == .internal ? trackpadManager.lastActiveSwitchAt : nil
-                ) {
-                    guard trackpadManager.internalTrackpad != nil else { return }
-                    trackpadManager.applySettings(for: internalDevice)
-                } onActivate: {
-                    selectedDeviceType = .internal
-                    trackpadManager.activateProfileManually(for: .internal)
-                }
-
-                if let magic = magicDevice {
-                    VStack(spacing: 8) {
-                        TrackpadCardView(
-                            device: magic,
-                            accentColor: .purple,
-                            currentPresetLabel: presetManager.activePreset.map { "\($0.emoji) \($0.name)" },
-                            isCurrentlyActive: trackpadManager.activeTrackpadType == .magicTrackpad,
-                            lastSwitchedAt: trackpadManager.activeTrackpadType == .magicTrackpad ? trackpadManager.lastActiveSwitchAt : nil
-                        ) {
-                            trackpadManager.applySettings(for: magic)
-                        } onActivate: {
-                            selectedDeviceType = .magicTrackpad
-                            trackpadManager.activateProfileManually(for: .magicTrackpad)
-                        }
-                        Button {
-                            showBluetoothPickerSheet = true
-                        } label: {
-                            Label("다른 기기로 변경", systemImage: "rectangle.roundedtop.badge.plus")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.purple)
-                        }
-                        .buttonStyle(.plain)
+                // 폭이 넉넉하면 두 트랙패드를 나란히 놓아 한눈에 보이게 한다
+                if devicesTabWidth >= Self.sideBySideMinWidth {
+                    HStack(alignment: .top, spacing: 14) {
+                        internalCard(showsIllustration: false)
+                            .frame(maxWidth: .infinity)
+                        magicSection(showsIllustration: false)
+                            .frame(maxWidth: .infinity)
                     }
                 } else {
-                    MagicTrackpadPlaceholder(onSelectDevice: { showBluetoothPickerSheet = true })
+                    internalCard(showsIllustration: true)
+                    magicSection(showsIllustration: true)
                 }
 
                 // 현재 설정 저장 버튼
@@ -288,11 +264,63 @@ struct MainView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { devicesTabWidth = $0 }
         .onAppear {
             syncSelectedDeviceType()
         }
         .onChange(of: trackpadManager.magicTrackpad != nil) { _, _ in
             syncSelectedDeviceType()
+        }
+    }
+
+    /// 카드 둘을 나란히 놓는 최소 폭 (카드 하나에 슬라이더가 충분히 들어가는 폭 × 2 + 여백)
+    private static let sideBySideMinWidth: CGFloat = 820
+
+    private func internalCard(showsIllustration: Bool) -> some View {
+        TrackpadCardView(
+            device: internalDevice,
+            accentColor: .blue,
+            currentPresetLabel: presetManager.activePreset.map { "\($0.emoji) \($0.name)" },
+            isCurrentlyActive: trackpadManager.activeTrackpadType == .internal,
+            lastSwitchedAt: trackpadManager.activeTrackpadType == .internal ? trackpadManager.lastActiveSwitchAt : nil,
+            showsIllustration: showsIllustration
+        ) {
+            guard trackpadManager.internalTrackpad != nil else { return }
+            trackpadManager.applySettings(for: internalDevice)
+        } onActivate: {
+            selectedDeviceType = .internal
+            trackpadManager.activateProfileManually(for: .internal)
+        }
+    }
+
+    @ViewBuilder
+    private func magicSection(showsIllustration: Bool) -> some View {
+        if let magic = magicDevice {
+            VStack(spacing: 8) {
+                TrackpadCardView(
+                    device: magic,
+                    accentColor: .purple,
+                    currentPresetLabel: presetManager.activePreset.map { "\($0.emoji) \($0.name)" },
+                    isCurrentlyActive: trackpadManager.activeTrackpadType == .magicTrackpad,
+                    lastSwitchedAt: trackpadManager.activeTrackpadType == .magicTrackpad ? trackpadManager.lastActiveSwitchAt : nil,
+                    showsIllustration: showsIllustration
+                ) {
+                    trackpadManager.applySettings(for: magic)
+                } onActivate: {
+                    selectedDeviceType = .magicTrackpad
+                    trackpadManager.activateProfileManually(for: .magicTrackpad)
+                }
+                Button {
+                    showBluetoothPickerSheet = true
+                } label: {
+                    Label("다른 기기로 변경", systemImage: "rectangle.roundedtop.badge.plus")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.purple)
+                }
+                .buttonStyle(.plain)
+            }
+        } else {
+            MagicTrackpadPlaceholder(onSelectDevice: { showBluetoothPickerSheet = true })
         }
     }
 
@@ -630,125 +658,6 @@ struct MainView: View {
         }
     }
 
-    // MARK: - Settings Tab
-
-    private var appRulesTab: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                settingsToggleRow(
-                    title: "앱 자동전환",
-                    description: "앱 실행 시 지정된 프리셋 자동 적용"
-                ) {
-                    Toggle("", isOn: Binding(
-                        get: { appSwitcherManager.isEnabled },
-                        set: { _ in appSwitcherManager.toggleEnabled() }
-                    ))
-                    .labelsHidden()
-                }
-
-                Divider()
-
-                settingsToggleRow(
-                    title: "앱 실행 중 Dock에 보이기",
-                    description: showDockIcon
-                        ? "Dock에 앱 아이콘을 표시합니다."
-                        : "Dock에는 표시하지 않습니다."
-                ) {
-                    Toggle("", isOn: $showDockIcon)
-                        .labelsHidden()
-                        .onChange(of: showDockIcon) { _, _ in
-                            AppVisibilityManager.shared.ensureAtLeastOneVisible(changedKey: AppVisibilityManager.showDockIconKey)
-                            NotificationCenter.default.post(name: .dockVisibilityChanged, object: nil)
-                        }
-                }
-
-                Divider()
-
-                settingsToggleRow(
-                    title: "앱 실행 중 메뉴바에 보이기",
-                    description: showMenuBarIcon
-                        ? "메뉴바에서 빠르게 열고 조작할 수 있습니다."
-                        : "메뉴바에는 표시하지 않습니다."
-                ) {
-                    Toggle("", isOn: $showMenuBarIcon)
-                        .labelsHidden()
-                        .onChange(of: showMenuBarIcon) { _, _ in
-                            AppVisibilityManager.shared.ensureAtLeastOneVisible(changedKey: AppVisibilityManager.showMenuBarIconKey)
-                        }
-                }
-
-                Divider()
-
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("앱 자동전환 규칙")
-                                .font(.system(size: 13, weight: .semibold))
-                            Text("특정 앱 사용 시 자동으로 감도 프리셋을 전환합니다")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button {
-                            showAddAppRuleSheet = true
-                        } label: {
-                            Label("규칙 추가", systemImage: "plus.circle")
-                                .font(.system(size: 12, weight: .medium))
-                        }
-                        .buttonStyle(.bordered)
-                    }
-
-                    if appSwitcherManager.rules.isEmpty {
-                        VStack(spacing: 10) {
-                            Image(systemName: "app.badge.plus")
-                                .font(.system(size: 28))
-                                .foregroundStyle(.tertiary)
-                            Text("앱 규칙이 없습니다")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 24)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(.primary.opacity(0.03))
-                        )
-                    } else {
-                        VStack(spacing: 8) {
-                            ForEach(appSwitcherManager.rules) { rule in
-                                AppRuleRow(rule: rule) {
-                                    appSwitcherManager.deleteRule(id: rule.id)
-                                }
-                            }
-                        }
-                    }
-                }
-                .padding(20)
-            }
-        }
-    }
-
-    private func settingsToggleRow<Accessory: View>(
-        title: String,
-        description: String,
-        @ViewBuilder accessory: () -> Accessory
-    ) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                Text(description)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            accessory()
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(.primary.opacity(0.03))
-    }
-
     // MARK: - Save Preset Sheet
 
     private var savePresetSheet: some View {
@@ -770,6 +679,7 @@ struct MainView: View {
                     showSavePresetSheet = false
                 }
                 .buttonStyle(.bordered)
+                .keyboardShortcut(.cancelAction)
 
                 Button("저장") {
                     if !newPresetName.isEmpty {
@@ -779,6 +689,7 @@ struct MainView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
                 .disabled(newPresetName.isEmpty)
             }
         }
@@ -857,6 +768,7 @@ struct BluetoothDevicePickerSheet: View {
                 }
                 Button("닫기") { onDismiss() }
                     .buttonStyle(.bordered)
+                    .keyboardShortcut(.cancelAction)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
@@ -1149,6 +1061,7 @@ struct AddAppRuleSheet: View {
                     dismiss()
                 }
                 .buttonStyle(.bordered)
+                .keyboardShortcut(.cancelAction)
 
                 Button("추가") {
                     guard let app = selectedApp else { return }
@@ -1173,6 +1086,7 @@ struct AddAppRuleSheet: View {
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
                 .disabled(selectedApp == nil)
             }
         }

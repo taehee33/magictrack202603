@@ -11,7 +11,7 @@ struct MagicTrackApp: App {
 
     var body: some Scene {
         // 메인 윈도우 (Settings-style)
-        WindowGroup("MagicTrack") {
+        WindowGroup("MagicTrack", id: "MagicTrack") {
             MainView()
                 .environmentObject(trackpadManager)
                 .environmentObject(presetManager)
@@ -23,6 +23,10 @@ struct MagicTrackApp: App {
         .commands {
             // 기본 메뉴 제거
             CommandGroup(replacing: .newItem) {}
+            // 별도 설정 창 대신 메인 창의 설정 탭을 연다
+            CommandGroup(replacing: .appSettings) {
+                OpenSettingsTabButton()
+            }
             CommandMenu("트랙패드") {
                 // ⌥M은 HotKeyManager의 전역 단축키가 처리한다. 여기에도 단축키를 걸면 앱이 앞에 있을 때 두 번 전환됨
                 Button("내장/매직 전환 (⌥M)") {
@@ -37,14 +41,25 @@ struct MagicTrackApp: App {
                 .environmentObject(presetManager)
         }
         .menuBarExtraStyle(.window)
-
-        // 환경설정
-        Settings {
-            SettingsView()
-                .environmentObject(trackpadManager)
-                .environmentObject(presetManager)
-                .environmentObject(appSwitcherManager)
-        }
     }
 
+}
+
+private struct OpenSettingsTabButton: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("설정…") {
+            AppVisibilityManager.shared.applyCurrentDockPreference()
+            if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("MagicTrack") == true }) {
+                window.makeKeyAndOrderFront(nil)
+                NotificationCenter.default.post(name: .showSettingsTab, object: nil)
+            } else {
+                MainView.opensSettingsOnAppear = true
+                openWindow(id: "MagicTrack")
+            }
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        .keyboardShortcut(",")
+    }
 }

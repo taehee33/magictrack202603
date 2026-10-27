@@ -10,6 +10,8 @@ struct TrackpadCardView: View {
     var currentPresetLabel: String? = nil
     var isCurrentlyActive: Bool = false
     var lastSwitchedAt: Date? = nil
+    /// 두 카드를 나란히 놓을 때는 폭이 좁아 일러스트를 뺀다
+    var showsIllustration: Bool = true
     let onSettingChange: () -> Void
     let onActivate: () -> Void
 
@@ -101,14 +103,16 @@ struct TrackpadCardView: View {
 
                 HStack(alignment: .top, spacing: 16) {
                     // 트랙패드 일러스트
-                    TrackpadIllustration(
-                        type: device.type,
-                        trackingSpeed: device.trackingSpeed,
-                        isConnected: device.isConnected,
-                        accentColor: accentColor,
-                        rotation: device.rotation
-                    )
-                    .frame(width: 90, height: 68)
+                    if showsIllustration {
+                        TrackpadIllustration(
+                            type: device.type,
+                            trackingSpeed: device.trackingSpeed,
+                            isConnected: device.isConnected,
+                            accentColor: accentColor,
+                            rotation: device.rotation
+                        )
+                        .frame(width: 90, height: 68)
+                    }
 
                     // 슬라이더들 + 항목별 초기화
                     VStack(spacing: 12) {
