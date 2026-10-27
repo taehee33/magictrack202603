@@ -317,7 +317,7 @@ final class TrackpadManager: ObservableObject {
         setSwitchMode(.lock(type))
     }
 
-    /// ⌥M: 자동 → 내장 고정 → 매직 고정 → 자동
+    /// 전환 단축키(기본 ⌃⌥M): 자동 → 내장 고정 → 매직 고정 → 자동
     func toggleSelectedTrackpad() {
         setSwitchMode(switchMode.next)
     }

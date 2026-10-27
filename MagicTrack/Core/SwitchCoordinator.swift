@@ -31,7 +31,7 @@ enum SwitchMode: String, CaseIterable, Codable {
         }
     }
 
-    /// ⌥M 순환 순서: 자동 → 내장 고정 → 매직 고정 → 자동
+    /// 전환 단축키 순환 순서: 자동 → 내장 고정 → 매직 고정 → 자동
     var next: SwitchMode {
         switch self {
         case .auto: return .lockInternal

@@ -7,6 +7,7 @@ struct MenuBarView: View {
     @EnvironmentObject var trackpadManager: TrackpadManager
     @EnvironmentObject var presetManager: PresetManager
     @Environment(\.openWindow) var openWindow
+    @ObservedObject private var hotKeys = HotKeyManager.shared
     @State private var selectedDeviceType: TrackpadType = .internal
 
     var body: some View {
@@ -156,10 +157,9 @@ struct MenuBarView: View {
     private var devicePicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Text("빠른 전환 (option + M)")
+                Text("빠른 전환")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.secondary)
-                menuShortcutHint
                 Spacer()
             }
 
@@ -186,13 +186,22 @@ struct MenuBarView: View {
         .padding(.top, 10)
     }
 
+    /// 전환 모드 순환 단축키 (설정에서 끄면 숨김)
+    @ViewBuilder
     private var menuShortcutHint: some View {
+        if let shortcut = hotKeys.activeDisplayString {
+            menuShortcutChip(shortcut)
+        }
+    }
+
+    private func menuShortcutChip(_ shortcut: String) -> some View {
         HStack(spacing: 4) {
             Image(systemName: "keyboard")
                 .font(.system(size: 9, weight: .semibold))
-            Text("⌥M")
+            Text(shortcut)
                 .font(.system(size: 9, weight: .bold, design: .rounded))
         }
+        .help("단축키로 자동 → 내장 고정 → 매직 고정 순환")
         .foregroundStyle(.secondary)
         .padding(.horizontal, 6)
         .padding(.vertical, 3)

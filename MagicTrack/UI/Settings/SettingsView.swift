@@ -1,5 +1,6 @@
 import SwiftUI
 import ServiceManagement
+import Carbon.HIToolbox
 
 // MARK: - SettingsView
 // 메인 창 '설정' 탭. 별도 설정 창(⌘,)은 없애고 모든 설정을 여기 모았다 (⌘,도 이 탭을 연다)
@@ -13,6 +14,7 @@ struct SettingsView: View {
     @AppStorage(AppVisibilityManager.showMenuBarIconKey) private var showMenuBarIcon = true
     @AppStorage(SwitchHUD.enabledKey) private var showSwitchHUD = true
     @ObservedObject private var rotationEngine = RotationEngine.shared
+    @ObservedObject private var hotKeys = HotKeyManager.shared
 
     @State private var loginItemStatus = SMAppService.mainApp.status
     @State private var loginItemError: String?
@@ -64,6 +66,33 @@ struct SettingsView: View {
 
             Section("트랙패드 전환") {
                 Toggle("전환할 때 화면에 알림 보이기", isOn: $showSwitchHUD)
+
+                Toggle("전환 모드 단축키 사용", isOn: Binding(
+                    get: { hotKeys.isEnabled },
+                    set: { hotKeys.setEnabled($0) }
+                ))
+
+                if hotKeys.isEnabled {
+                    LabeledContent("단축키 (자동 → 내장 고정 → 매직 고정)") {
+                        HStack(spacing: 8) {
+                            ShortcutRecorder()
+                            Button("기본값") {
+                                hotKeys.update(shortcut: .default)
+                            }
+                            .disabled(hotKeys.shortcut == .default)
+                        }
+                    }
+
+                    if hotKeys.registrationFailed {
+                        Text("\(hotKeys.shortcut.displayString) 단축키를 등록하지 못했어요. 다른 앱이 쓰고 있을 수 있어요. 다른 조합을 지정해 주세요.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.orange)
+                    }
+
+                    Text("버튼을 누른 뒤 원하는 조합을 누르세요. 글자 입력을 가로채지 않도록 ⌃ 또는 ⌘가 들어간 조합만 쓸 수 있어요. 취소는 esc.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
             }
 
             appRulesSection
@@ -189,6 +218,59 @@ struct SettingsView: View {
         case (false, false):
             return "앱 접근성을 위해 Dock 또는 메뉴바 중 하나는 항상 유지됩니다."
         }
+    }
+}
+
+// MARK: - ShortcutRecorder
+// 누르면 다음 키 입력을 단축키로 받는다. 받는 동안에는 기존 전역 단축키를 잠시 풀어 같은 조합도 다시 지정할 수 있게 한다
+
+private struct ShortcutRecorder: View {
+    @ObservedObject private var hotKeys = HotKeyManager.shared
+    @State private var isRecording = false
+    @State private var monitor: Any?
+    @State private var showsRejected = false
+
+    var body: some View {
+        Button {
+            isRecording ? stopRecording() : startRecording()
+        } label: {
+            Text(label)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .frame(minWidth: 110)
+        }
+        .tint(isRecording ? .accentColor : nil)
+        .buttonStyle(.bordered)
+        .onDisappear(perform: stopRecording)
+    }
+
+    private var label: String {
+        if !isRecording { return hotKeys.shortcut.displayString }
+        return showsRejected ? "⌃ 또는 ⌘와 함께" : "키를 누르세요…"
+    }
+
+    private func startRecording() {
+        isRecording = true
+        showsRejected = false
+        hotKeys.unregisterToggleTrackpadHotKey()
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if Int(event.keyCode) == kVK_Escape {
+                stopRecording()
+            } else if let shortcut = HotKeyShortcut(event: event) {
+                hotKeys.update(shortcut: shortcut)
+                stopRecording()
+            } else {
+                showsRejected = true
+            }
+            return nil
+        }
+    }
+
+    private func stopRecording() {
+        guard isRecording else { return }
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        isRecording = false
+        hotKeys.registerToggleTrackpadHotKey()
     }
 }
 

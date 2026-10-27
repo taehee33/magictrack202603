@@ -8,6 +8,7 @@ struct MainView: View {
     @EnvironmentObject var trackpadManager: TrackpadManager
     @EnvironmentObject var presetManager: PresetManager
     @EnvironmentObject var appSwitcherManager: AppSwitcherManager
+    @ObservedObject private var hotKeys = HotKeyManager.shared
 
     /// ⌘,로 창을 새로 열 때 설정 탭으로 시작하게 한다 (이미 열린 창은 알림으로 바꾼다)
     static var opensSettingsOnAppear = false
@@ -327,11 +328,9 @@ struct MainView: View {
     private var devicePicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Text("빠른 전환 (option + M)")
+                Text("빠른 전환")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
-
-                shortcutHint
 
                 Spacer()
             }
@@ -358,13 +357,22 @@ struct MainView: View {
         }
     }
 
+    /// 전환 모드 순환 단축키 (설정에서 끄면 숨김)
+    @ViewBuilder
     private var shortcutHint: some View {
+        if let shortcut = hotKeys.activeDisplayString {
+            shortcutChip(shortcut)
+        }
+    }
+
+    private func shortcutChip(_ shortcut: String) -> some View {
         HStack(spacing: 4) {
             Image(systemName: "keyboard")
                 .font(.system(size: 10, weight: .semibold))
-            Text("⌥M")
+            Text(shortcut)
                 .font(.system(size: 10, weight: .bold, design: .rounded))
         }
+        .help("단축키로 자동 → 내장 고정 → 매직 고정 순환")
         .foregroundStyle(.secondary)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -564,9 +572,7 @@ struct MainView: View {
                 Text("트랙패드 전환")
                     .font(.system(size: 12, weight: .semibold))
                 Spacer()
-                Text("⌥M으로 순환")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
+                shortcutHint
             }
 
             Picker("", selection: Binding(

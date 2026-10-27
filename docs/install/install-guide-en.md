@@ -124,7 +124,7 @@ After changing permissions, relaunching the app is recommended.
 
 ### Quick switching
 
-- Shortcut: `option + M`
+- Shortcut: `control + option + M` (change or turn off in the Settings tab)
 - Quickly switch between internal and Magic Trackpad profiles
 
 ## 8. Current Limitations

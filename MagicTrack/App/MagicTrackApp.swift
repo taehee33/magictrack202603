@@ -7,6 +7,7 @@ struct MagicTrackApp: App {
     @StateObject private var trackpadManager = TrackpadManager.shared
     @StateObject private var presetManager = PresetManager.shared
     @StateObject private var appSwitcherManager = AppSwitcherManager.shared
+    @StateObject private var hotKeys = HotKeyManager.shared
     @AppStorage(AppVisibilityManager.showMenuBarIconKey) private var showMenuBarIcon = true
 
     var body: some Scene {
@@ -28,8 +29,8 @@ struct MagicTrackApp: App {
                 OpenSettingsTabButton()
             }
             CommandMenu("트랙패드") {
-                // ⌥M은 HotKeyManager의 전역 단축키가 처리한다. 여기에도 단축키를 걸면 앱이 앞에 있을 때 두 번 전환됨
-                Button("내장/매직 전환 (⌥M)") {
+                // 단축키는 HotKeyManager의 전역 단축키가 처리한다. 여기에도 단축키를 걸면 앱이 앞에 있을 때 두 번 전환됨
+                Button(hotKeys.activeDisplayString.map { "전환 모드 바꾸기 (\($0))" } ?? "전환 모드 바꾸기") {
                     trackpadManager.toggleSelectedTrackpad()
                 }
             }
