@@ -358,7 +358,7 @@
 				INFOPLIST_FILE = "$(SRCROOT)/MagicTrack/Resources/Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.magictrack.app";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = MagicMagicTrack;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -377,7 +377,7 @@
 				INFOPLIST_FILE = "$(SRCROOT)/MagicTrack/Resources/Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.magictrack.app";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = MagicMagicTrack;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

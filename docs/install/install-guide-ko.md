@@ -1,6 +1,6 @@
-# MagicTrack 설치 가이드
+# MagicMagicTrack 설치 가이드
 
-이 문서는 일반 사용자가 MagicTrack를 설치하고 처음 실행할 때 필요한 절차를 자세히 설명합니다.
+이 문서는 일반 사용자가 MagicMagicTrack을 설치하고 처음 실행할 때 필요한 절차를 자세히 설명합니다.
 
 현재 배포본은 Apple Developer ID 서명 및 notarization이 없는 빌드일 수 있습니다. 이 경우 macOS 보안 경고가 나타날 수 있습니다.
 
@@ -16,13 +16,13 @@
 ### DMG 설치
 
 1. `.dmg` 파일 더블클릭
-2. 열린 창에서 `MagicTrack.app`를 `Applications` 폴더로 드래그
+2. 열린 창에서 `MagicMagicTrack.app`를 `Applications` 폴더로 드래그
 3. 복사 완료 후 `Applications` 폴더에서 앱 확인
 
 ### ZIP 설치
 
 1. `.zip` 파일 더블클릭
-2. 압축 해제된 `MagicTrack.app` 확인
+2. 압축 해제된 `MagicMagicTrack.app` 확인
 3. `Applications` 폴더로 이동
 
 권장:
@@ -45,7 +45,7 @@
 ## 4. 가장 먼저 해볼 실행 방법
 
 1. `Applications` 폴더 열기
-2. `MagicTrack.app` 우클릭
+2. `MagicMagicTrack.app` 우클릭
 3. `열기`
 4. 경고창이 나오면 다시 `열기`
 
@@ -58,7 +58,7 @@
 1. `시스템 설정`
 2. `개인정보 보호 및 보안`
 3. 아래쪽으로 스크롤
-4. `MagicTrack이 차단됨` 또는 유사 문구 확인
+4. `MagicMagicTrack이 차단됨` 또는 유사 문구 확인
 5. `그래도 열기`
 
 그 다음 다시 앱 실행
@@ -74,7 +74,7 @@
 
 ## 6. 첫 실행 후 권한 설정
 
-MagicTrack는 일부 기능을 위해 macOS 권한이 필요할 수 있습니다.
+MagicMagicTrack은 일부 기능을 위해 macOS 권한이 필요할 수 있습니다.
 
 ### 입력 모니터링
 
@@ -87,7 +87,7 @@ MagicTrack는 일부 기능을 위해 macOS 권한이 필요할 수 있습니다
 1. `시스템 설정`
 2. `개인정보 보호 및 보안`
 3. `입력 모니터링`
-4. `MagicTrack` 허용
+4. `MagicMagicTrack` 허용
 
 ### 손쉬운 사용
 
@@ -100,7 +100,7 @@ MagicTrack는 일부 기능을 위해 macOS 권한이 필요할 수 있습니다
 1. `시스템 설정`
 2. `개인정보 보호 및 보안`
 3. `손쉬운 사용`
-4. `MagicTrack` 허용
+4. `MagicMagicTrack` 허용
 
 권한 변경 후 앱을 다시 실행하는 것이 안전합니다.
 

@@ -1,6 +1,6 @@
-# MagicTrack Installation Guide
+# MagicMagicTrack Installation Guide
 
-This guide explains how users can install and run MagicTrack on macOS.
+This guide explains how users can install and run MagicMagicTrack on macOS.
 
 Important:
 
@@ -19,13 +19,13 @@ Download one of the following files from the release page:
 ### Install from DMG
 
 1. Double-click the `.dmg` file
-2. Drag `MagicTrack.app` into the `Applications` folder
+2. Drag `MagicMagicTrack.app` into the `Applications` folder
 3. Open `Applications` and confirm the app is there
 
 ### Install from ZIP
 
 1. Double-click the `.zip` file
-2. Locate the extracted `MagicTrack.app`
+2. Locate the extracted `MagicMagicTrack.app`
 3. Move it into the `Applications` folder
 
 Recommendation:
@@ -46,7 +46,7 @@ If the build is not signed/notarized yet, macOS may show warnings such as:
 ## 4. Best First Attempt
 
 1. Open the `Applications` folder
-2. Right-click `MagicTrack.app`
+2. Right-click `MagicMagicTrack.app`
 3. Click `Open`
 4. Click `Open` again if macOS asks for confirmation
 
@@ -59,7 +59,7 @@ This works better than double-clicking for unsigned builds.
 1. Open `System Settings`
 2. Go to `Privacy & Security`
 3. Scroll down
-4. Look for a blocked app message related to `MagicTrack`
+4. Look for a blocked app message related to `MagicMagicTrack`
 5. Click `Open Anyway`
 
 Then try launching the app again.
@@ -73,7 +73,7 @@ In some cases:
 
 ## 6. Permissions
 
-MagicTrack may require macOS permissions for some features.
+MagicMagicTrack may require macOS permissions for some features.
 
 ### Input Monitoring
 
@@ -86,7 +86,7 @@ Path:
 1. `System Settings`
 2. `Privacy & Security`
 3. `Input Monitoring`
-4. Enable `MagicTrack`
+4. Enable `MagicMagicTrack`
 
 ### Accessibility
 
@@ -99,7 +99,7 @@ Path:
 1. `System Settings`
 2. `Privacy & Security`
 3. `Accessibility`
-4. Enable `MagicTrack`
+4. Enable `MagicMagicTrack`
 
 After changing permissions, relaunching the app is recommended.
 

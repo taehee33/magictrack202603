@@ -122,7 +122,7 @@ struct MainView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 8) {
-                    Text("MagicTrack")
+                    Text(AppInfo.name)
                         .font(.system(size: 18, weight: .bold))
                     Text(AppInfo.compactVersionDescription)
                         .font(.system(size: 10, weight: .bold, design: .rounded))
@@ -443,7 +443,7 @@ struct MainView: View {
                     .foregroundStyle(trackpadManager.switchMode == .auto && !trackpadManager.autoSwitchAvailable ? .orange : .secondary)
                 Image(systemName: "info.circle")
                     .foregroundStyle(.tertiary)
-                    .help("MagicTrack이 켜져 있는 동안에는 여기 설정이 시스템 설정보다 우선 적용돼요. 앱을 끄면 시스템 설정 값으로 돌아가요. 시스템 설정에 저장된 값은 바꾸지 않아요.")
+                    .help("\(AppInfo.name)이 켜져 있는 동안에는 여기 설정이 시스템 설정보다 우선 적용돼요. 앱을 끄면 시스템 설정 값으로 돌아가요. 시스템 설정에 저장된 값은 바꾸지 않아요.")
             }
             .font(.system(size: 11))
         }

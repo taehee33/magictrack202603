@@ -1,6 +1,6 @@
-# MagicTrack
+# MagicMagicTrack
 
-MagicTrack는 맥북 내장 트랙패드와 블루투스 매직 트랙패드의 설정값을 분리 저장하고, 손가락이 닿은 트랙패드의 설정을 바로 적용하는 macOS 앱입니다.
+MagicMagicTrack은 맥북 내장 트랙패드와 블루투스 매직 트랙패드의 설정값을 분리 저장하고, 손가락이 닿은 트랙패드의 설정을 바로 적용하는 macOS 앱입니다.
 
 ## 핵심 기능
 
@@ -48,7 +48,7 @@ xcodebuild -project MagicTrack.xcodeproj \
 실행:
 
 ```bash
-open /tmp/MagicTrackDerivedData/Build/Products/Debug/MagicTrack.app
+open /tmp/MagicTrackDerivedData/Build/Products/Debug/MagicMagicTrack.app
 ```
 
 ## 배포 파일 생성

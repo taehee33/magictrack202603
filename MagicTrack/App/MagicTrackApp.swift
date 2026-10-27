@@ -12,7 +12,7 @@ struct MagicTrackApp: App {
 
     var body: some Scene {
         // 메인 윈도우 (Settings-style)
-        WindowGroup("MagicTrack", id: "MagicTrack") {
+        WindowGroup(AppInfo.name, id: "MagicTrack") {
             MainView()
                 .environmentObject(trackpadManager)
                 .environmentObject(presetManager)
@@ -36,7 +36,7 @@ struct MagicTrackApp: App {
             }
         }
 
-        MenuBarExtra("MagicTrack", systemImage: "rectangle.roundedtop.fill", isInserted: $showMenuBarIcon) {
+        MenuBarExtra(AppInfo.name, systemImage: "rectangle.roundedtop.fill", isInserted: $showMenuBarIcon) {
             MenuBarView()
                 .environmentObject(trackpadManager)
                 .environmentObject(presetManager)

@@ -8,7 +8,7 @@ INFO_PLIST="$ROOT_DIR/MagicTrack/Resources/Info.plist"
 
 VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$INFO_PLIST")
 BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$INFO_PLIST")
-APP_NAME="MagicTrack"
+APP_NAME="MagicMagicTrack"
 APP_PATH="$DERIVED_DATA_PATH/Build/Products/Release/${APP_NAME}.app"
 ZIP_PATH="$DIST_DIR/${APP_NAME}-${VERSION}-${BUILD}-macOS.zip"
 
@@ -17,7 +17,7 @@ rm -f "$ZIP_PATH"
 
 xcodebuild \
   -project "$ROOT_DIR/MagicTrack.xcodeproj" \
-  -scheme "$APP_NAME" \
+  -scheme "MagicTrack" \
   -configuration Release \
   -derivedDataPath "$DERIVED_DATA_PATH" \
   build

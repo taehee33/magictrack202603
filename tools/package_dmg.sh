@@ -9,7 +9,7 @@ INFO_PLIST="$ROOT_DIR/MagicTrack/Resources/Info.plist"
 
 VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$INFO_PLIST")
 BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$INFO_PLIST")
-APP_NAME="MagicTrack"
+APP_NAME="MagicMagicTrack"
 APP_PATH="$DERIVED_DATA_PATH/Build/Products/Release/${APP_NAME}.app"
 DMG_PATH="$DIST_DIR/${APP_NAME}-${VERSION}-${BUILD}.dmg"
 

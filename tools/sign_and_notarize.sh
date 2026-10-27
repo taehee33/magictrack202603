@@ -7,7 +7,7 @@ INFO_PLIST="$ROOT_DIR/MagicTrack/Resources/Info.plist"
 
 VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$INFO_PLIST")
 BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$INFO_PLIST")
-APP_NAME="MagicTrack"
+APP_NAME="MagicMagicTrack"
 DMG_PATH="$DIST_DIR/${APP_NAME}-${VERSION}-${BUILD}.dmg"
 
 : "${DEVELOPER_ID_APP:?Set DEVELOPER_ID_APP to your Developer ID Application certificate name}"

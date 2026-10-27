@@ -262,6 +262,9 @@ enum DeveloperMode {
 }
 
 enum AppInfo {
+    /// 화면에 보이는 앱 이름 (Xcode 프로젝트·타깃·번들 ID는 예전 이름 MagicTrack 그대로)
+    static let name = "MagicMagicTrack"
+
     static var shortVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
     }

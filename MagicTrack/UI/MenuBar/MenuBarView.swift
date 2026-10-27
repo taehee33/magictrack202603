@@ -132,7 +132,7 @@ struct MenuBarView: View {
                 .foregroundStyle(
                     LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing)
                 )
-            Text("MagicTrack")
+            Text(AppInfo.name)
                 .font(.system(size: 13, weight: .bold))
             Text(AppInfo.compactVersionDescription)
                 .font(.system(size: 10, weight: .bold, design: .rounded))

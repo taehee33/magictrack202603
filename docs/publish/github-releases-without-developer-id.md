@@ -148,8 +148,8 @@ MagicTrack는 맥북 내장 트랙패드와 블루투스 매직 트랙패드의 
 
 릴리즈마다 아래 파일 구성을 추천합니다.
 
-- `MagicTrack-x.y.z.dmg`
-- `MagicTrack-x.y.z.zip`
+- `MagicMagicTrack-x.y.z.dmg`
+- `MagicMagicTrack-x.y.z.zip`
 - `SHA256.txt` 선택 사항
 - `릴리즈 노트` 본문
 

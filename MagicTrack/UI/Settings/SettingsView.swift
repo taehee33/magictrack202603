@@ -32,7 +32,7 @@ struct SettingsView: View {
 
                 if loginItemStatus == .requiresApproval {
                     HStack {
-                        Text("시스템 설정 › 로그인 항목에서 MagicTrack을 허용해야 자동 시작돼요.")
+                        Text("시스템 설정 › 로그인 항목에서 \(AppInfo.name)을 허용해야 자동 시작돼요.")
                             .font(.system(size: 11))
                             .foregroundStyle(.orange)
                         Spacer()

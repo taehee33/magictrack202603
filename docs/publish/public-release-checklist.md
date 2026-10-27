@@ -1,6 +1,6 @@
 # 공개 배포 체크리스트
 
-이 문서는 MagicTrack를 공개 Git 저장소와 GitHub Releases에 올리기 전 확인해야 할 항목을 정리한 체크리스트입니다.
+이 문서는 MagicMagicTrack을 공개 Git 저장소와 GitHub Releases에 올리기 전 확인해야 할 항목을 정리한 체크리스트입니다.
 
 ## 1. 공개 전 정보 검열
 
