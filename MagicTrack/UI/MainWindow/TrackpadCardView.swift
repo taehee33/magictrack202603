@@ -24,15 +24,20 @@ struct TrackpadCardView: View {
                     RoundedRectangle(cornerRadius: 10)
                         .fill(accentColor.opacity(0.12))
                         .frame(width: 36, height: 36)
+                    // 매직 트랙패드는 놓은 방향대로 아이콘도 돌린다
                     Image(systemName: device.type.systemImageName)
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(accentColor)
+                        .rotationEffect(.degrees(device.rotation.angle))
+                        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: device.rotation)
                 }
+                .help(device.rotation == .standard ? "" : device.rotation.rotatedLabel)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(device.type.displayName)
                         .font(.system(size: 14, weight: .semibold))
                     // 사용 중 = 지금 이 트랙패드 설정이 적용돼 있음 (전환은 위쪽 전환 모드에서)
+                    HStack(spacing: 6) {
                     if isCurrentlyActive {
                         HStack(spacing: 6) {
                             Circle()
@@ -60,6 +65,13 @@ struct TrackpadCardView: View {
                                 .font(.system(size: 11))
                                 .foregroundStyle(.tertiary)
                         }
+                    }
+                    // 돌려 놓았으면 상태 옆에 회전 방향 (예: · 180° 회전)
+                    if device.rotation != .standard {
+                        Text(verbatim: "· \(device.rotation.rotatedLabel)")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(accentColor)
+                    }
                     }
                 }
 

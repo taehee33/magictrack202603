@@ -45,6 +45,11 @@ enum TrackpadRotation: String, Codable, CaseIterable {
         }
     }
 
+    /// 회전 상태 표시 (예: 180° 회전, 오른쪽 90° 회전)
+    var rotatedLabel: String {
+        String(localized: "\(displayName) 회전")
+    }
+
     var angle: Double {
         switch self {
         case .standard: return 0

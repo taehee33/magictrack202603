@@ -165,6 +165,7 @@ EN = {
     "회전하려면 손쉬운 사용 권한이 필요해요": "Rotation needs Accessibility permission",
     "‘%@ %@’ 프리셋을 삭제할까요?": "Delete the “%@ %@” preset?",
     "⌃ 또는 ⌘와 함께": "Add ⌃ or ⌘",
+    "%@ 회전": "Rotated %@",
     "언어": "Language",
     "다시 시작하면 바뀐 언어로 보여요.": "Restart the app to use the new language.",
     "지금 다시 시작": "Restart Now",

@@ -229,6 +229,7 @@ private struct CompactDeviceSection: View {
                 Image(systemName: icon)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(accentColor)
+                    .rotationEffect(.degrees(device.rotation.angle))
                     .frame(width: 16)
 
                 VStack(alignment: .leading, spacing: 1) {
@@ -308,7 +309,8 @@ private struct CompactDeviceSection: View {
 
     private var statusText: String {
         guard device.isConnected else { return String(localized: "연결 없음") }
-        return isActive ? String(localized: "사용 중") : String(localized: "연결됨")
+        let status = isActive ? String(localized: "사용 중") : String(localized: "연결됨")
+        return device.rotation == .standard ? status : "\(status) · \(device.rotation.rotatedLabel)"
     }
 }
 
