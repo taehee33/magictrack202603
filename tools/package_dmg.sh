@@ -5,10 +5,8 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DERIVED_DATA_PATH="/tmp/MagicTrackReleaseDerivedData"
 DIST_DIR="$ROOT_DIR/dist"
 STAGING_DIR="$DIST_DIR/dmg-staging"
-INFO_PLIST="$ROOT_DIR/MagicTrack/Resources/Info.plist"
 
-VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$INFO_PLIST")
-BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$INFO_PLIST")
+source "$ROOT_DIR/tools/version.sh"
 APP_NAME="MagicMagicTrack"
 APP_PATH="$DERIVED_DATA_PATH/Build/Products/Release/${APP_NAME}.app"
 DMG_PATH="$DIST_DIR/${APP_NAME}-${VERSION}-${BUILD}.dmg"

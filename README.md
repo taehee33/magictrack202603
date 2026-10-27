@@ -29,6 +29,7 @@ MagicMagicTrack은 맥북 내장 트랙패드와 블루투스 매직 트랙패�
 - [인증서 없이 GitHub Releases로 배포하는 방법](docs/publish/github-releases-without-developer-id.md)
 - [사용자 설치 가이드 (한국어)](docs/install/install-guide-ko.md)
 - [User Installation Guide (English)](docs/install/install-guide-en.md)
+- [릴리즈 노트 v1.2.0](docs/release/release-notes-v1.2.0.md)
 - [릴리즈 노트 v1.1.0](docs/release/release-notes-v1.1.0.md)
 - [GitHub Release 본문 템플릿](docs/release/github-release-template-v1.1.0.md)
 - [GitHub Release 최종 본문](docs/release/github-release-body-v1.1.0.md)
