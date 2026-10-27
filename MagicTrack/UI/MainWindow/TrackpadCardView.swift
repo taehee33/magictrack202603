@@ -9,11 +9,9 @@ struct TrackpadCardView: View {
     /// 오른쪽에 표시할 현재 프리셋 이름 (nil이면 속도 값 표시)
     var currentPresetLabel: String? = nil
     var isCurrentlyActive: Bool = false
-    var lastSwitchedAt: Date? = nil
     /// 두 카드를 나란히 놓을 때는 폭이 좁아 일러스트를 뺀다
     var showsIllustration: Bool = true
     let onSettingChange: () -> Void
-    let onActivate: () -> Void
 
     @State private var isExpanded = true
 
@@ -34,12 +32,13 @@ struct TrackpadCardView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(device.type.displayName)
                         .font(.system(size: 14, weight: .semibold))
+                    // 사용 중 = 지금 이 트랙패드 설정이 적용돼 있음 (전환은 위쪽 전환 모드에서)
                     if isCurrentlyActive {
                         HStack(spacing: 6) {
                             Circle()
                                 .fill(accentColor)
                                 .frame(width: 6, height: 6)
-                            Text(activeStatusText)
+                            Text("사용 중")
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(accentColor)
                         }
@@ -48,7 +47,7 @@ struct TrackpadCardView: View {
                             Circle()
                                 .fill(Color.green)
                                 .frame(width: 6, height: 6)
-                            Text("연결됨 · 적용 대기")
+                            Text("연결됨")
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
                         }
@@ -116,27 +115,6 @@ struct TrackpadCardView: View {
 
                     // 슬라이더들 + 항목별 초기화
                     VStack(spacing: 12) {
-                        HStack {
-                            Button(action: onActivate) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: isCurrentlyActive ? "checkmark.circle.fill" : "play.circle.fill")
-                                        .font(.system(size: 12, weight: .semibold))
-                                    Text(isCurrentlyActive ? "현재 적용 중" : "이 설정 적용")
-                                        .font(.system(size: 11, weight: .semibold))
-                                }
-                                .foregroundStyle(device.isConnected ? accentColor : Color.secondary)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 7)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(device.isConnected ? accentColor.opacity(isCurrentlyActive ? 0.18 : 0.1) : Color.primary.opacity(0.05))
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(!device.isConnected)
-                            Spacer()
-                        }
-
                         HStack(alignment: .top, spacing: 8) {
                             SensitivitySlider(
                                 label: "이동 속도",
@@ -316,12 +294,6 @@ struct TrackpadCardView: View {
         TrackpadDefaults.clickPressureLabels[value.clamped(to: 0...2)]
     }
 
-    private var activeStatusText: String {
-        if let lastSwitchedAt {
-            return "현재 적용 중 · \(lastSwitchedAt.formatted(date: .omitted, time: .standard))"
-        }
-        return "현재 적용 중"
-    }
 }
 
 private struct RotationSelector: View {
@@ -467,20 +439,20 @@ struct RotationStatusView: View {
         if engine.needsAccessibility {
             HStack(spacing: 6) {
                 Label("회전하려면 손쉬운 사용 권한이 필요해요", systemImage: "exclamationmark.triangle")
-                    .font(.system(size: compact ? 9 : 10, weight: .medium))
+                    .font(.system(size: compact ? 11 : 10, weight: .medium))
                     .foregroundStyle(.orange)
                 Button("권한 열기") { engine.requestAccessibility() }
-                    .font(.system(size: compact ? 9 : 10, weight: .semibold))
+                    .font(.system(size: compact ? 11 : 10, weight: .semibold))
                     .buttonStyle(.link)
             }
         } else if engine.driverFlipActive {
             Label("포인터·스크롤·제스처가 모두 뒤집혀요", systemImage: "checkmark.circle")
-                .font(.system(size: compact ? 9 : 10, weight: .medium))
+                .font(.system(size: compact ? 11 : 10, weight: .medium))
                 .foregroundStyle(.secondary)
         } else {
             Label(engine.isRunning ? "포인터·스크롤·드래그가 회전돼요 (제스처는 제외, 손쉬운 사용 권한 사용)" : "매직 트랙패드를 돌려 놓고 쓸 때 방향을 맞춰요",
                   systemImage: engine.isRunning ? "checkmark.circle" : "info.circle")
-                .font(.system(size: compact ? 9 : 10, weight: .medium))
+                .font(.system(size: compact ? 11 : 10, weight: .medium))
                 .foregroundStyle(.secondary)
         }
     }

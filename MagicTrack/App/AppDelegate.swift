@@ -256,6 +256,11 @@ extension Notification.Name {
     static let showSettingsTab = Notification.Name("showSettingsTab")
 }
 
+/// 개발자 모드: 켜면 트랙패드 탭에 장치·전환 로그 패널을 보여준다 (기본 꺼짐)
+enum DeveloperMode {
+    static let key = "developer_mode"
+}
+
 enum AppInfo {
     static var shortVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"

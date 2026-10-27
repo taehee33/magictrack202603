@@ -8,7 +8,6 @@ struct MenuBarView: View {
     @EnvironmentObject var presetManager: PresetManager
     @Environment(\.openWindow) var openWindow
     @ObservedObject private var hotKeys = HotKeyManager.shared
-    @State private var selectedDeviceType: TrackpadType = .internal
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,7 +16,6 @@ struct MenuBarView: View {
             Divider()
 
             VStack(spacing: 12) {
-                devicePicker
                 menuCapabilityNotice
 
                 ScrollView {
@@ -29,8 +27,7 @@ struct MenuBarView: View {
                                 accentColor: .blue,
                                 device: internalTrackpad,
                                 trackpadManager: trackpadManager,
-                                showsRotation: false,
-                                isSelected: selectedDeviceType == .internal
+                                showsRotation: false
                             )
                         }
 
@@ -41,14 +38,13 @@ struct MenuBarView: View {
                                 accentColor: .purple,
                                 device: magicTrackpad,
                                 trackpadManager: trackpadManager,
-                                showsRotation: true,
-                                isSelected: selectedDeviceType == .magicTrackpad
+                                showsRotation: true
                             )
-                        } else if selectedDeviceType == .magicTrackpad {
+                        } else {
                             HStack(spacing: 8) {
                                 Image(systemName: "rectangle.roundedtop.fill")
                                     .foregroundStyle(.tertiary)
-                                Text("선택한 트랙패드가 연결되어 있지 않습니다")
+                                Text("매직 트랙패드 연결 없음")
                                     .font(.system(size: 11))
                                     .foregroundStyle(.tertiary)
                                 Spacer()
@@ -64,12 +60,6 @@ struct MenuBarView: View {
                     .padding(.vertical, 10)
                 }
                 .frame(maxHeight: 360)
-            }
-            .onAppear {
-                syncSelectedDeviceType()
-            }
-            .onChange(of: trackpadManager.magicTrackpad != nil) { _, _ in
-                syncSelectedDeviceType()
             }
 
             Divider()
@@ -145,45 +135,13 @@ struct MenuBarView: View {
             Text("MagicTrack")
                 .font(.system(size: 13, weight: .bold))
             Text(AppInfo.compactVersionDescription)
-                .font(.system(size: 9, weight: .bold, design: .rounded))
+                .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundStyle(.secondary)
             Spacer()
             menuShortcutHint
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-    }
-
-    private var devicePicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Text("빠른 전환")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-
-            HStack(spacing: 8) {
-                pickerButton(
-                    type: .internal,
-                    title: "내장",
-                    icon: "laptopcomputer",
-                    color: .blue,
-                    status: statusText(for: .internal),
-                    isAvailable: trackpadManager.internalTrackpad != nil
-                )
-                pickerButton(
-                    type: .magicTrackpad,
-                    title: "매직",
-                    icon: "rectangle.roundedtop.fill",
-                    color: .purple,
-                    status: statusText(for: .magicTrackpad),
-                    isAvailable: trackpadManager.magicTrackpad != nil
-                )
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.top, 10)
     }
 
     /// 전환 모드 순환 단축키 (설정에서 끄면 숨김)
@@ -197,9 +155,9 @@ struct MenuBarView: View {
     private func menuShortcutChip(_ shortcut: String) -> some View {
         HStack(spacing: 4) {
             Image(systemName: "keyboard")
-                .font(.system(size: 9, weight: .semibold))
+                .font(.system(size: 10, weight: .semibold))
             Text(shortcut)
-                .font(.system(size: 9, weight: .bold, design: .rounded))
+                .font(.system(size: 10, weight: .bold, design: .rounded))
         }
         .help("단축키로 자동 → 내장 고정 → 매직 고정 순환")
         .foregroundStyle(.secondary)
@@ -213,71 +171,6 @@ struct MenuBarView: View {
                         .stroke(Color.primary.opacity(0.08), lineWidth: 1)
                 )
         )
-    }
-
-    private func pickerButton(
-        type: TrackpadType,
-        title: String,
-        icon: String,
-        color: Color,
-        status: String,
-        isAvailable: Bool
-    ) -> some View {
-        Button {
-            guard isAvailable else { return }
-            selectedDeviceType = type
-            trackpadManager.activateProfileManually(for: type)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(isAvailable ? color : .secondary)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(.system(size: 11, weight: .semibold))
-                    Text(status)
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(isAvailable ? (selectedDeviceType == type ? color : .secondary) : Color(nsColor: .tertiaryLabelColor))
-                }
-                Spacer()
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.primary.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(selectedDeviceType == type ? color.opacity(0.45) : Color.primary.opacity(0.08), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-        .disabled(!isAvailable)
-    }
-
-    private func statusText(for type: TrackpadType) -> String {
-        let connected: Bool = {
-            switch type {
-            case .internal: return trackpadManager.internalTrackpad != nil
-            case .magicTrackpad: return trackpadManager.magicTrackpad != nil
-            }
-        }()
-        guard connected else { return "연결 없음" }
-        return trackpadManager.activeTrackpadType == type ? "연결됨 · 적용" : "연결됨 · 적용 대기"
-    }
-
-    private func syncSelectedDeviceType() {
-        if let activeType = trackpadManager.activeTrackpadType {
-            selectedDeviceType = activeType
-            return
-        }
-        if selectedDeviceType == .magicTrackpad, trackpadManager.magicTrackpad == nil {
-            selectedDeviceType = .internal
-        }
-        if selectedDeviceType == .internal, trackpadManager.internalTrackpad == nil, trackpadManager.magicTrackpad != nil {
-            selectedDeviceType = .magicTrackpad
-        }
     }
 
     /// 전환 모드 (자동 / 내장 고정 / 매직 고정)
@@ -295,14 +188,28 @@ struct MenuBarView: View {
             .labelsHidden()
             if trackpadManager.switchMode == .auto && !trackpadManager.autoSwitchAvailable {
                 Text("자동 감지를 쓸 수 없어 마지막 설정으로 고정돼요")
-                    .font(.system(size: 10))
+                    .font(.system(size: 11))
                     .foregroundStyle(.orange)
             }
-            Text("앱이 켜져 있는 동안 시스템 설정보다 우선 적용 · 끄면 시스템 설정으로 복귀")
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                if let active = trackpadManager.activeTrackpadType {
+                    Text("지금: \(active.displayName)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(active == .internal ? Color.blue : Color.purple)
+                } else {
+                    Text("연결된 트랙패드 없음")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "info.circle")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .help("앱이 켜져 있는 동안 시스템 설정보다 우선 적용돼요. 앱을 끄면 시스템 설정 값으로 돌아가요.")
+            }
         }
         .padding(.horizontal, 14)
+        .padding(.top, 10)
     }
 }
 
@@ -313,7 +220,8 @@ private struct CompactDeviceSection: View {
     @ObservedObject var device: TrackpadDevice
     let trackpadManager: TrackpadManager
     let showsRotation: Bool
-    let isSelected: Bool
+
+    private var isActive: Bool { trackpadManager.activeTrackpadType == device.type }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -327,20 +235,11 @@ private struct CompactDeviceSection: View {
                     Text(title)
                         .font(.system(size: 12, weight: .semibold))
                     Text(statusText)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(device.isConnected ? (trackpadManager.activeTrackpadType == device.type ? accentColor : .secondary) : Color(nsColor: .tertiaryLabelColor))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(device.isConnected ? (isActive ? accentColor : .secondary) : Color(nsColor: .tertiaryLabelColor))
                 }
 
                 Spacer()
-
-                Button(trackpadManager.activeTrackpadType == device.type ? "적용" : "이 설정 적용") {
-                    guard device.isConnected else { return }
-                    trackpadManager.applySettings(for: device)
-                    trackpadManager.activateProfileManually(for: device.type)
-                }
-                .buttonStyle(.plain)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(device.isConnected ? accentColor : .secondary)
             }
 
             CompactSliderRow(
@@ -401,7 +300,7 @@ private struct CompactDeviceSection: View {
                     .fill(Color.primary.opacity(0.05))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(isSelected ? accentColor.opacity(0.45) : accentColor.opacity(0.18), lineWidth: 1)
+                        .stroke(isActive ? accentColor.opacity(0.45) : accentColor.opacity(0.18), lineWidth: 1)
                 )
         )
         .opacity(device.isConnected ? 1 : 0.55)
@@ -409,7 +308,7 @@ private struct CompactDeviceSection: View {
 
     private var statusText: String {
         guard device.isConnected else { return "연결 없음" }
-        return trackpadManager.activeTrackpadType == device.type ? "연결됨 · 적용" : "연결됨 · 적용 대기"
+        return isActive ? "사용 중" : "연결됨"
     }
 }
 
@@ -431,7 +330,7 @@ private struct CompactSliderRow: View {
                 .tint(color)
 
             Text(String(format: "%.0f", value))
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
                 .foregroundStyle(color)
                 .frame(width: 28)
         }
@@ -456,7 +355,7 @@ private struct CompactPressureRow: View {
                         value = index
                     } label: {
                         Text(labels[index])
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(value == index ? .white : .secondary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 4)
@@ -490,7 +389,7 @@ private struct CompactRotationRow: View {
                         value = rotation
                     } label: {
                         Text(title(rotation))
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(value == rotation ? .white : .secondary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 4)

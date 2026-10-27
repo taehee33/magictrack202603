@@ -18,8 +18,8 @@ struct MainView: View {
     @State private var newPresetName = ""
     @State private var newPresetEmoji = "⚡"
     @State private var selectedTab: Tab = .devices
-    @State private var selectedDeviceType: TrackpadType = .internal
     @State private var devicesTabWidth: CGFloat = 0
+    @AppStorage(DeveloperMode.key) private var developerMode = false
 
     enum Tab: String, CaseIterable {
         case devices = "트랙패드"
@@ -158,21 +158,6 @@ struct MainView: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(Capsule().fill(.primary.opacity(0.06)))
-
-            if connectedActiveLabel != nil || connectedLastSwitchText != nil {
-                VStack(alignment: .trailing, spacing: 2) {
-                    if let connectedActiveLabel {
-                        Text("현재 적용: \(connectedActiveLabel)")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.primary)
-                    }
-                    if let connectedLastSwitchText {
-                        Text("마지막 전환: \(connectedLastSwitchText)")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
@@ -194,17 +179,18 @@ struct MainView: View {
                         Text(tab.rawValue)
                             .font(.system(size: 12, weight: .medium))
                     }
-                    .foregroundStyle(selectedTab == tab ? .white : .secondary)
+                    .foregroundStyle(selectedTab == tab ? .primary : .secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
                     .contentShape(Rectangle())
                     .background(
                         RoundedRectangle(cornerRadius: 7)
-                            .fill(selectedTab == tab ? Color.blue : .clear)
+                            .fill(selectedTab == tab ? Color.primary.opacity(0.12) : .clear)
                             .animation(.easeInOut(duration: 0.2), value: selectedTab)
                     )
                 }
                 .buttonStyle(.plain)
+                .focusEffectDisabled()
             }
         }
         .padding(4)
@@ -221,8 +207,7 @@ struct MainView: View {
     private var devicesTab: some View {
         ScrollView {
             VStack(spacing: 14) {
-                devicePicker
-                capabilityNoticeCard
+                switchModeBar
 
                 // 폭이 넉넉하면 두 트랙패드를 나란히 놓아 한눈에 보이게 한다
                 if devicesTabWidth >= Self.sideBySideMinWidth {
@@ -260,18 +245,14 @@ struct MainView: View {
                 }
                 .buttonStyle(.plain)
 
-                inputDebugPanel
+                if developerMode {
+                    inputDebugPanel
+                }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { devicesTabWidth = $0 }
-        .onAppear {
-            syncSelectedDeviceType()
-        }
-        .onChange(of: trackpadManager.magicTrackpad != nil) { _, _ in
-            syncSelectedDeviceType()
-        }
     }
 
     /// 카드 둘을 나란히 놓는 최소 폭 (카드 하나에 슬라이더가 충분히 들어가는 폭 × 2 + 여백)
@@ -283,14 +264,10 @@ struct MainView: View {
             accentColor: .blue,
             currentPresetLabel: presetManager.activePreset.map { "\($0.emoji) \($0.name)" },
             isCurrentlyActive: trackpadManager.activeTrackpadType == .internal,
-            lastSwitchedAt: trackpadManager.activeTrackpadType == .internal ? trackpadManager.lastActiveSwitchAt : nil,
             showsIllustration: showsIllustration
         ) {
             guard trackpadManager.internalTrackpad != nil else { return }
             trackpadManager.applySettings(for: internalDevice)
-        } onActivate: {
-            selectedDeviceType = .internal
-            trackpadManager.activateProfileManually(for: .internal)
         }
     }
 
@@ -303,13 +280,9 @@ struct MainView: View {
                     accentColor: .purple,
                     currentPresetLabel: presetManager.activePreset.map { "\($0.emoji) \($0.name)" },
                     isCurrentlyActive: trackpadManager.activeTrackpadType == .magicTrackpad,
-                    lastSwitchedAt: trackpadManager.activeTrackpadType == .magicTrackpad ? trackpadManager.lastActiveSwitchAt : nil,
                     showsIllustration: showsIllustration
                 ) {
                     trackpadManager.applySettings(for: magic)
-                } onActivate: {
-                    selectedDeviceType = .magicTrackpad
-                    trackpadManager.activateProfileManually(for: .magicTrackpad)
                 }
                 Button {
                     showBluetoothPickerSheet = true
@@ -322,38 +295,6 @@ struct MainView: View {
             }
         } else {
             MagicTrackpadPlaceholder(onSelectDevice: { showBluetoothPickerSheet = true })
-        }
-    }
-
-    private var devicePicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Text("빠른 전환")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-            }
-
-            HStack(spacing: 8) {
-                devicePickerButton(
-                    type: .internal,
-                    title: "내장 트랙패드",
-                    subtitle: deviceStatusText(for: .internal),
-                    icon: "laptopcomputer",
-                    color: .blue,
-                    isAvailable: trackpadManager.internalTrackpad != nil
-                )
-
-                devicePickerButton(
-                    type: .magicTrackpad,
-                    title: "매직 트랙패드",
-                    subtitle: deviceStatusText(for: .magicTrackpad),
-                    icon: "rectangle.roundedtop.fill",
-                    color: .purple,
-                    isAvailable: trackpadManager.magicTrackpad != nil
-                )
-            }
         }
     }
 
@@ -384,97 +325,6 @@ struct MainView: View {
                         .stroke(Color.primary.opacity(0.08), lineWidth: 1)
                 )
         )
-    }
-
-    private func devicePickerButton(
-        type: TrackpadType,
-        title: String,
-        subtitle: String,
-        icon: String,
-        color: Color,
-        isAvailable: Bool
-    ) -> some View {
-        Button {
-            guard isAvailable else { return }
-            withAnimation(.easeInOut(duration: 0.2)) {
-                selectedDeviceType = type
-            }
-            trackpadManager.activateProfileManually(for: type)
-        } label: {
-            HStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(color.opacity(selectedDeviceType == type ? 0.18 : 0.1))
-                        .frame(width: 34, height: 34)
-                    Image(systemName: icon)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(isAvailable ? color : .secondary)
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(isAvailable ? .primary : .secondary)
-                    Text(subtitle)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(isAvailable ? (selectedDeviceType == type ? color : .secondary) : Color(nsColor: .tertiaryLabelColor))
-                }
-
-                Spacer()
-
-                if selectedDeviceType == type {
-                    Text("선택")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(color)
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.primary.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(selectedDeviceType == type ? color.opacity(0.45) : Color.primary.opacity(0.08), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-        .disabled(!isAvailable)
-    }
-
-    private func deviceStatusText(for type: TrackpadType) -> String {
-        let connected: Bool
-        switch type {
-        case .internal:
-            connected = trackpadManager.internalTrackpad != nil
-        case .magicTrackpad:
-            connected = trackpadManager.magicTrackpad != nil
-        }
-
-        guard connected else { return "연결 없음" }
-        return trackpadManager.activeTrackpadType == type ? "연결됨 · 적용" : "연결됨 · 적용 대기"
-    }
-
-    private func syncSelectedDeviceType() {
-        if let activeType = trackpadManager.activeTrackpadType {
-            selectedDeviceType = activeType
-            return
-        }
-        if selectedDeviceType == .magicTrackpad, trackpadManager.magicTrackpad == nil {
-            selectedDeviceType = .internal
-        }
-        if selectedDeviceType == .internal, trackpadManager.internalTrackpad == nil, trackpadManager.magicTrackpad != nil {
-            selectedDeviceType = .magicTrackpad
-        }
-    }
-
-    private var connectedActiveLabel: String? {
-        trackpadManager.activeTrackpadType?.displayName
-    }
-
-    private var connectedLastSwitchText: String? {
-        trackpadManager.lastActiveSwitchAt?.formatted(date: .omitted, time: .standard)
     }
 
     private var inputDebugPanel: some View {
@@ -562,63 +412,85 @@ struct MainView: View {
         )
     }
 
-    /// 전환 모드 선택 (자동 / 내장 고정 / 매직 고정)
-    private var capabilityNoticeCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: "hand.point.up.left")
+    /// 전환 모드 (자동 / 내장 고정 / 매직 고정). 빠른 전환 버튼과 '이 설정 적용'도 결국 고정 모드라 여기 하나로 합쳤다
+    private var switchModeBar: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                Text("전환 모드")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.blue)
-                Text("트랙패드 전환")
-                    .font(.system(size: 12, weight: .semibold))
-                Spacer()
-                shortcutHint
-            }
 
-            Picker("", selection: Binding(
-                get: { trackpadManager.switchMode },
-                set: { trackpadManager.setSwitchMode($0) }
-            )) {
-                ForEach(SwitchMode.allCases, id: \.self) { mode in
-                    Text(mode.displayName).tag(mode)
+                Picker("", selection: Binding(
+                    get: { trackpadManager.switchMode },
+                    set: { trackpadManager.setSwitchMode($0) }
+                )) {
+                    ForEach(SwitchMode.allCases, id: \.self) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+
+                shortcutHint
+
+                Spacer(minLength: 8)
+
+                activeTrackpadBadge
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
 
-            Text(switchModeDescription)
-                .font(.system(size: 11))
-                .foregroundStyle(trackpadManager.switchMode == .auto && !trackpadManager.autoSwitchAvailable ? .orange : .secondary)
-
-            Label("MagicTrack이 켜져 있는 동안에는 여기 설정이 시스템 설정보다 우선 적용돼요. 앱을 끄면 시스템 설정 값으로 돌아가요. 시스템 설정에 저장된 값은 바꾸지 않아요.",
-                  systemImage: "info.circle")
-                .font(.system(size: 10))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 4) {
+                Text(switchModeDescription)
+                    .foregroundStyle(trackpadManager.switchMode == .auto && !trackpadManager.autoSwitchAvailable ? .orange : .secondary)
+                Image(systemName: "info.circle")
+                    .foregroundStyle(.tertiary)
+                    .help("MagicTrack이 켜져 있는 동안에는 여기 설정이 시스템 설정보다 우선 적용돼요. 앱을 끄면 시스템 설정 값으로 돌아가요. 시스템 설정에 저장된 값은 바꾸지 않아요.")
+            }
+            .font(.system(size: 11))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.blue.opacity(0.06))
+                .fill(Color.primary.opacity(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.blue.opacity(0.15), lineWidth: 1)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
                 )
         )
     }
 
-    private var switchModeDescription: String {
-        let current = trackpadManager.activeTrackpadType.map { "지금 적용 중: \($0.displayName)" } ?? "연결된 트랙패드 없음"
-        switch trackpadManager.switchMode {
-        case .auto where !trackpadManager.autoSwitchAvailable:
-            return "자동 감지를 쓸 수 없어 마지막 설정으로 고정돼요 · \(current)"
-        case .auto:
-            return "손가락이 닿은 트랙패드의 설정으로 바로 바뀌어요 · \(current)"
-        case .lockInternal, .lockMagic:
-            return "어느 트랙패드를 써도 이 설정을 유지해요 · \(current)"
+    /// 지금 설정이 적용된 트랙패드 (내장 파랑 / 매직 보라)
+    @ViewBuilder
+    private var activeTrackpadBadge: some View {
+        if let active = trackpadManager.activeTrackpadType {
+            let color: Color = active == .internal ? .blue : .purple
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(color)
+                    .frame(width: 7, height: 7)
+                Text("지금: \(active.displayName)")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(color)
+            }
+            .help(trackpadManager.lastActiveSwitchAt.map { "마지막 전환 \($0.formatted(date: .omitted, time: .standard))" } ?? "")
+        } else {
+            Text("연결된 트랙패드 없음")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
         }
     }
+
+    private var switchModeDescription: String {
+        switch trackpadManager.switchMode {
+        case .auto where !trackpadManager.autoSwitchAvailable:
+            return "자동 감지를 쓸 수 없어 마지막 설정으로 고정돼요"
+        case .auto:
+            return "손가락이 닿은 트랙패드의 설정으로 바로 바뀌어요"
+        case .lockInternal, .lockMagic:
+            return "어느 트랙패드를 써도 \(trackpadManager.switchMode.lockedType?.displayName ?? "") 설정을 유지해요"
+        }
+    }
+
     // MARK: - Presets Tab
 
     private var presetsTab: some View {

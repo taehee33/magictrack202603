@@ -13,6 +13,7 @@ struct SettingsView: View {
     @AppStorage(AppVisibilityManager.showDockIconKey) private var showDockIcon = true
     @AppStorage(AppVisibilityManager.showMenuBarIconKey) private var showMenuBarIcon = true
     @AppStorage(SwitchHUD.enabledKey) private var showSwitchHUD = true
+    @AppStorage(DeveloperMode.key) private var developerMode = false
     @ObservedObject private var rotationEngine = RotationEngine.shared
     @ObservedObject private var hotKeys = HotKeyManager.shared
 
@@ -112,6 +113,13 @@ struct SettingsView: View {
                 } message: {
                     Text("직접 만들거나 고친 프리셋이 모두 지워지고 기본 프리셋 4개로 돌아가요. 되돌릴 수 없어요.")
                 }
+            }
+
+            Section("고급") {
+                Toggle("개발자 모드", isOn: $developerMode)
+                Text("트랙패드 탭 아래에 장치 연결·터치 감지·전환 기록을 보여줘요. 문제를 알릴 때 도움이 돼요.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
             }
 
             Section("정보") {
