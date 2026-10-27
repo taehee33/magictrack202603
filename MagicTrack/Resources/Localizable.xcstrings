@@ -576,6 +576,16 @@
         }
       }
     },
+    "메뉴바에 사용 중인 트랙패드와 회전 표시": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the trackpad in use and its rotation in the menu bar"
+          }
+        }
+      }
+    },
     "메뉴바에만 표시됩니다.": {
       "localizations": {
         "en": {
@@ -1116,6 +1126,16 @@
         }
       }
     },
+    "우 90°": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "R 90°"
+          }
+        }
+      }
+    },
     "이 트랙패드 값이 프리셋과 달라요. 프리셋 탭에서 편집 › ‘현재 값으로 채우기’로 덮어쓸 수 있어요.": {
       "localizations": {
         "en": {
@@ -1332,6 +1352,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "L 90"
+          }
+        }
+      }
+    },
+    "좌 90°": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L 90°"
           }
         }
       }

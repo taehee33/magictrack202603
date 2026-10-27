@@ -420,9 +420,29 @@ private struct CompactRotationRow: View {
 // 메뉴바 아이콘: 앱 아이콘처럼 뒤 내장 패드 + 기울어진 앞 매직 패드. 지금 적용 중인 패드만 채워서 상태를 보여준다 (단색 템플릿)
 
 enum MenuBarIcon {
-    private static let size = NSSize(width: 20, height: 16)
+    /// 아이콘 옆에 지금 쓰는 트랙패드 이름(과 매직 회전)을 글자로 보여줄지 (기본 켬)
+    static let showsLabelKey = "menubar_shows_label"
 
-    static func image(active: TrackpadType?) -> NSImage {
+    private static let iconSize = NSSize(width: 20, height: 16)
+    private static let font = NSFont.systemFont(ofSize: 12, weight: .medium)
+
+    /// 아이콘 옆 글자: 내장 / 매직 / 매직 180° 처럼 (적용 중인 트랙패드가 없으면 nil)
+    static func label(active: TrackpadType?, magicRotation: TrackpadRotation) -> String? {
+        switch active {
+        case .internal:
+            return SwitchMode.lockInternal.shortName
+        case .magicTrackpad:
+            let magic = SwitchMode.lockMagic.shortName
+            return magicRotation == .standard ? magic : "\(magic) \(magicRotation.shortName)"
+        case nil:
+            return nil
+        }
+    }
+
+    static func image(active: TrackpadType?, label: String? = nil) -> NSImage {
+        let text = label.map { NSAttributedString(string: $0, attributes: [.font: font, .foregroundColor: NSColor.black]) }
+        let textWidth = text.map { ceil($0.size().width) + 4 } ?? 0
+        let size = NSSize(width: iconSize.width + textWidth, height: iconSize.height)
         let image = NSImage(size: size, flipped: true) { _ in
             let back = NSBezierPath(roundedRect: NSRect(x: 1.5, y: 2, width: 11, height: 8), xRadius: 2, yRadius: 2)
             let front = NSBezierPath(roundedRect: NSRect(x: -5.5, y: -4, width: 11, height: 8), xRadius: 2, yRadius: 2)
@@ -444,10 +464,50 @@ enum MenuBarIcon {
             NSGraphicsContext.current?.compositingOperation = .sourceOver
 
             if active == .magicTrackpad { front.fill() } else { front.stroke() }
+
+            if let text {
+                let textHeight = text.size().height
+                text.draw(at: NSPoint(x: iconSize.width + 4, y: (iconSize.height - textHeight) / 2))
+            }
             return true
         }
         image.isTemplate = true
         image.accessibilityDescription = AppInfo.name
         return image
+    }
+}
+
+// MARK: - MenuBarLabel
+// 메뉴바에 놓이는 아이콘(+ 글자). 적용 중인 트랙패드나 매직 회전이 바뀌면 바로 다시 그린다
+
+struct MenuBarLabel: View {
+    @ObservedObject var trackpadManager: TrackpadManager
+
+    var body: some View {
+        if let magic = trackpadManager.magicTrackpad {
+            MagicAwareLabel(trackpadManager: trackpadManager, magic: magic)
+        } else {
+            LabelImage(active: trackpadManager.activeTrackpadType, rotation: .standard)
+        }
+    }
+
+    private struct MagicAwareLabel: View {
+        @ObservedObject var trackpadManager: TrackpadManager
+        @ObservedObject var magic: TrackpadDevice
+
+        var body: some View {
+            LabelImage(active: trackpadManager.activeTrackpadType, rotation: magic.rotation)
+        }
+    }
+
+    private struct LabelImage: View {
+        let active: TrackpadType?
+        let rotation: TrackpadRotation
+        @AppStorage(MenuBarIcon.showsLabelKey) private var showsLabel = true
+
+        var body: some View {
+            let label = showsLabel ? MenuBarIcon.label(active: active, magicRotation: rotation) : nil
+            Image(nsImage: MenuBarIcon.image(active: active, label: label))
+        }
     }
 }

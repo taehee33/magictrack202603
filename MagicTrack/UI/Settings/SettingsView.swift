@@ -14,6 +14,7 @@ struct SettingsView: View {
     @AppStorage(AppVisibilityManager.showMenuBarIconKey) private var showMenuBarIcon = true
     @AppStorage(SwitchHUD.enabledKey) private var showSwitchHUD = true
     @AppStorage(DeveloperMode.key) private var developerMode = false
+    @AppStorage(MenuBarIcon.showsLabelKey) private var menuBarShowsLabel = true
     @ObservedObject private var rotationEngine = RotationEngine.shared
     @ObservedObject private var hotKeys = HotKeyManager.shared
 
@@ -60,6 +61,9 @@ struct SettingsView: View {
                     .onChange(of: showMenuBarIcon) { _, _ in
                         AppVisibilityManager.shared.ensureAtLeastOneVisible(changedKey: AppVisibilityManager.showMenuBarIconKey)
                     }
+
+                Toggle("메뉴바에 사용 중인 트랙패드와 회전 표시", isOn: $menuBarShowsLabel)
+                    .disabled(!showMenuBarIcon)
 
                 Text(visibilityDescription)
                     .font(.system(size: 11))

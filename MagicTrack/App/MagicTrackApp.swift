@@ -46,8 +46,8 @@ struct MagicTrackApp: App {
                 .environmentObject(trackpadManager)
                 .environmentObject(presetManager)
         } label: {
-            // 지금 적용 중인 트랙패드가 채워진 아이콘
-            Image(nsImage: MenuBarIcon.image(active: trackpadManager.activeTrackpadType))
+            // 지금 적용 중인 트랙패드가 채워진 아이콘 + 이름·회전 (설정에서 글자는 끌 수 있음)
+            MenuBarLabel(trackpadManager: trackpadManager)
         }
         .menuBarExtraStyle(.window)
     }

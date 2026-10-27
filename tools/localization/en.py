@@ -167,6 +167,9 @@ EN = {
     "⌃ 또는 ⌘와 함께": "Add ⌃ or ⌘",
     "%@ 회전": "Rotated %@",
     "언어": "Language",
+    "좌 90°": "L 90°",
+    "우 90°": "R 90°",
+    "메뉴바에 사용 중인 트랙패드와 회전 표시": "Show the trackpad in use and its rotation in the menu bar",
     "다시 시작하면 바뀐 언어로 보여요.": "Restart the app to use the new language.",
     "지금 다시 시작": "Restart Now",
 }
