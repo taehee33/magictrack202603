@@ -17,6 +17,8 @@ struct SettingsView: View {
     @AppStorage(MenuBarIcon.showsLabelKey) private var menuBarShowsLabel = true
     @ObservedObject private var rotationEngine = RotationEngine.shared
     @ObservedObject private var hotKeys = HotKeyManager.shared
+    @ObservedObject private var updateChecker = UpdateChecker.shared
+    @AppStorage(UpdateChecker.autoCheckKey) private var autoCheckUpdates = true
 
     @State private var loginItemStatus = SMAppService.mainApp.status
     @State private var loginItemError: String?
@@ -163,6 +165,8 @@ struct SettingsView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
+
+            updateSection
         }
         .formStyle(.grouped)
         .onAppear(perform: refreshLoginItemStatus)
@@ -176,6 +180,63 @@ struct SettingsView: View {
                 appSwitcherManager: appSwitcherManager,
                 onDismiss: { showAddAppRuleSheet = false }
             )
+        }
+    }
+
+    // MARK: - 업데이트
+
+    private var updateSection: some View {
+        Section("업데이트") {
+            Toggle("새 버전 자동 확인 (하루 한 번)", isOn: $autoCheckUpdates)
+                .onChange(of: autoCheckUpdates) { _, isOn in
+                    if isOn { updateChecker.start() }
+                }
+
+            HStack {
+                updateStatusText
+                Spacer()
+                if let release = updateChecker.availableRelease {
+                    Button("다운로드 페이지 열기") {
+                        NSWorkspace.shared.open(release.page)
+                    }
+                } else {
+                    Button("지금 확인") {
+                        updateChecker.check()
+                    }
+                    .disabled(updateChecker.status == .checking)
+                }
+            }
+
+            Text("GitHub 릴리스 페이지만 확인해요. 새 버전은 직접 받아서 응용 프로그램 폴더의 앱을 바꿔 주세요.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private var updateStatusText: some View {
+        switch updateChecker.status {
+        case .checking:
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text("확인하는 중…")
+            }
+        case .available(let release):
+            Label("새 버전(\(release.version))이 있어요", systemImage: "arrow.down.circle.fill")
+                .foregroundStyle(.blue)
+        case .upToDate:
+            Text("최신 버전이에요")
+        case .failed:
+            Text("확인하지 못했어요. 인터넷 연결을 확인해 주세요.")
+                .foregroundStyle(.secondary)
+        case .idle:
+            if let last = updateChecker.lastChecked {
+                Text("마지막 확인: \(last.formatted(date: .abbreviated, time: .shortened))")
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("아직 확인하지 않았어요")
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 

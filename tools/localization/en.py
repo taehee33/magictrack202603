@@ -172,4 +172,17 @@ EN = {
     "메뉴바에 사용 중인 트랙패드와 회전 표시": "Show the trackpad in use and its rotation in the menu bar",
     "다시 시작하면 바뀐 언어로 보여요.": "Restart the app to use the new language.",
     "지금 다시 시작": "Restart Now",
+    # 새 버전 확인
+    "업데이트": "Updates",
+    "새 버전 자동 확인 (하루 한 번)": "Check for new versions automatically (once a day)",
+    "다운로드 페이지 열기": "Open Download Page",
+    "지금 확인": "Check Now",
+    "GitHub 릴리스 페이지만 확인해요. 새 버전은 직접 받아서 응용 프로그램 폴더의 앱을 바꿔 주세요.": "Only checks the GitHub releases page. Download the new version yourself and replace the app in your Applications folder.",
+    "확인하는 중…": "Checking…",
+    "새 버전(%@)이 있어요": "Version %@ is available",
+    "새 버전(%@)이 있어요 · 다운로드": "Version %@ is available · Download",
+    "최신 버전이에요": "You’re up to date",
+    "확인하지 못했어요. 인터넷 연결을 확인해 주세요.": "Couldn’t check. Check your internet connection.",
+    "마지막 확인: %@": "Last checked: %@",
+    "아직 확인하지 않았어요": "Not checked yet",
 }

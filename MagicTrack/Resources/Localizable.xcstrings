@@ -80,6 +80,16 @@
         }
       }
     },
+    "GitHub 릴리스 페이지만 확인해요. 새 버전은 직접 받아서 응용 프로그램 폴더의 앱을 바꿔 주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only checks the GitHub releases page. Download the new version yourself and replace the app in your Applications folder."
+          }
+        }
+      }
+    },
     "Mac 기본값: %@": {
       "localizations": {
         "en": {
@@ -386,6 +396,16 @@
         }
       }
     },
+    "다운로드 페이지 열기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Download Page"
+          }
+        }
+      }
+    },
     "단단하게": {
       "localizations": {
         "en": {
@@ -492,6 +512,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Last switched %@"
+          }
+        }
+      }
+    },
+    "마지막 확인: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last checked: %@"
           }
         }
       }
@@ -766,6 +796,36 @@
         }
       }
     },
+    "새 버전 자동 확인 (하루 한 번)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for new versions automatically (once a day)"
+          }
+        }
+      }
+    },
+    "새 버전(%@)이 있어요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ is available"
+          }
+        }
+      }
+    },
+    "새 버전(%@)이 있어요 · 다운로드": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ is available · Download"
+          }
+        }
+      }
+    },
     "새 프리셋": {
       "localizations": {
         "en": {
@@ -926,6 +986,16 @@
         }
       }
     },
+    "아직 확인하지 않았어요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not checked yet"
+          }
+        }
+      }
+    },
     "앱 %lld": {
       "localizations": {
         "en": {
@@ -1052,6 +1122,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Language"
+          }
+        }
+      }
+    },
+    "업데이트": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates"
           }
         }
       }
@@ -1396,6 +1476,16 @@
         }
       }
     },
+    "지금 확인": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check Now"
+          }
+        }
+      }
+    },
     "지금: %@": {
       "localizations": {
         "en": {
@@ -1432,6 +1522,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reset"
+          }
+        }
+      }
+    },
+    "최신 버전이에요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You’re up to date"
           }
         }
       }
@@ -1702,6 +1802,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save Current Settings as Preset"
+          }
+        }
+      }
+    },
+    "확인하는 중…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking…"
+          }
+        }
+      }
+    },
+    "확인하지 못했어요. 인터넷 연결을 확인해 주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t check. Check your internet connection."
           }
         }
       }

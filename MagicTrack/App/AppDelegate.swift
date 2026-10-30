@@ -18,6 +18,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 권한 확인
         PermissionManager.shared.checkPermissions()
 
+        // 새 버전 확인 (자동 확인이 켜져 있을 때 하루 한 번)
+        UpdateChecker.shared.start()
+
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleDockVisibilityChanged),

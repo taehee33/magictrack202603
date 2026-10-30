@@ -87,5 +87,13 @@ let valuesPad = TrackpadDevice(hidDevice: nil, type: .internal, productName: "�
 valuesPad.trackingSpeed = 6; valuesPad.scrollSpeed = 3; valuesPad.clickPressure = 2
 check(valuesPad.currentValues == TrackpadDefaults(trackingSpeed: 6, scrollSpeed: 3, clickPressure: 2), "현재 값 = 이동·스크롤·클릭 (프리셋 '수정됨' 비교용)")
 
+// MARK: - AppVersion (새 버전 확인)
+
+check(AppVersion.isNewer("1.4.0", than: "1.3.0"), "새 버전: 1.4.0 > 1.3.0")
+check(AppVersion.isNewer("v1.10.0", than: "1.9.2"), "새 버전: 자리 수가 아니라 숫자로 비교 (1.10 > 1.9)")
+check(!AppVersion.isNewer("1.3", than: "1.3.0"), "새 버전: 1.3과 1.3.0은 같음")
+check(!AppVersion.isNewer("1.2.9", than: "1.3.0"), "새 버전: 예전 버전은 알리지 않음")
+check(AppVersion.isNewer("1.3.1-beta", than: "1.3.0"), "새 버전: 꼬리(-beta)는 무시")
+
 print(failures == 0 ? "\n모든 테스트 통과" : "\n실패 \(failures)건")
 exit(failures == 0 ? 0 : 1)

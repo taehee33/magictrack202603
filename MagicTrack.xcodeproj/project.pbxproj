@@ -15,6 +15,7 @@
 		DE4BF6B9A36740949D780984 /* TrackpadDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77C7E94D0E1D4532A9B3DDEB /* TrackpadDevice.swift */; };
 		200C2ABE1ADB4578A653007F /* RotationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58EABD582C4D47AF91AFA868 /* RotationEngine.swift */; };
 		0D77156447C140DE87205BE5 /* SwitchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A96A686FFC446488470BE81 /* SwitchCoordinator.swift */; };
+		15D32CE62DF64B869C456A81 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542FA80C69814128AE671526 /* UpdateChecker.swift */; };
 		68F92B09C5754D22AEE7F2F8 /* TouchSourceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD13592698D4F26917E7926 /* TouchSourceMonitor.swift */; };
 		A1B2C3D4E5F60718293A4B5C /* DeviceClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* DeviceClassifier.swift */; };
 		7C7A3BE8D4494714909DB74C /* TrackpadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22FC58C51A7045CD9F73A9A2 /* TrackpadManager.swift */; };
@@ -46,6 +47,7 @@
 		77C7E94D0E1D4532A9B3DDEB /* TrackpadDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackpadDevice.swift"; sourceTree = "<group>"; };
 		58EABD582C4D47AF91AFA868 /* RotationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RotationEngine.swift"; sourceTree = "<group>"; };
 		7A96A686FFC446488470BE81 /* SwitchCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwitchCoordinator.swift"; sourceTree = "<group>"; };
+		542FA80C69814128AE671526 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UpdateChecker.swift"; sourceTree = "<group>"; };
 		ADD13592698D4F26917E7926 /* TouchSourceMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TouchSourceMonitor.swift"; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5D /* DeviceClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceClassifier.swift"; sourceTree = "<group>"; };
 		22FC58C51A7045CD9F73A9A2 /* TrackpadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackpadManager.swift"; sourceTree = "<group>"; };
@@ -128,6 +130,7 @@
 				77C7E94D0E1D4532A9B3DDEB /* TrackpadDevice.swift */,
 				58EABD582C4D47AF91AFA868 /* RotationEngine.swift */,
 				7A96A686FFC446488470BE81 /* SwitchCoordinator.swift */,
+				542FA80C69814128AE671526 /* UpdateChecker.swift */,
 				ADD13592698D4F26917E7926 /* TouchSourceMonitor.swift */,
 				A1B2C3D4E5F60718293A4B5D /* DeviceClassifier.swift */,
 				22FC58C51A7045CD9F73A9A2 /* TrackpadManager.swift */,
@@ -311,6 +314,7 @@
 				DE4BF6B9A36740949D780984 /* TrackpadDevice.swift in Sources */,
 				200C2ABE1ADB4578A653007F /* RotationEngine.swift in Sources */,
 				0D77156447C140DE87205BE5 /* SwitchCoordinator.swift in Sources */,
+				15D32CE62DF64B869C456A81 /* UpdateChecker.swift in Sources */,
 				68F92B09C5754D22AEE7F2F8 /* TouchSourceMonitor.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5C /* DeviceClassifier.swift in Sources */,
 				7C7A3BE8D4494714909DB74C /* TrackpadManager.swift in Sources */,

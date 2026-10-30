@@ -8,6 +8,7 @@ struct MenuBarView: View {
     @EnvironmentObject var presetManager: PresetManager
     @Environment(\.openWindow) var openWindow
     @ObservedObject private var hotKeys = HotKeyManager.shared
+    @ObservedObject private var updateChecker = UpdateChecker.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -94,6 +95,22 @@ struct MenuBarView: View {
                         .buttonStyle(.plain)
                     }
                 }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+            }
+
+            if let release = updateChecker.availableRelease {
+                Divider()
+
+                Button {
+                    NSWorkspace.shared.open(release.page)
+                } label: {
+                    Label("새 버전(\(release.version))이 있어요 · 다운로드", systemImage: "arrow.down.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.blue)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
             }
