@@ -66,12 +66,14 @@ open /tmp/MagicTrackDerivedData/Build/Products/Debug/MagicMagicTrack.app
 
 ### 코드 서명
 
-기본값은 이 맥에서만 실행되는 임시 서명(ad-hoc)이라 그대로 빌드됩니다. 다만 임시 서명은 빌드할 때마다 바뀌어서 **손쉬운 사용 권한을 매번 다시 허용**해야 합니다. 자기 인증서로 서명하면 다시 빌드해도 권한이 유지됩니다.
+기본값은 이 맥에서만 실행되는 임시 서명(ad-hoc)이라 그대로 빌드됩니다. 다만 임시 서명은 빌드할 때마다 바뀌어서 **손쉬운 사용 권한을 매번 다시 허용**해야 합니다. 같은 인증서로 계속 서명하면 다시 빌드해도 권한이 유지됩니다.
 
 ```bash
-cp Config/Signing.local.xcconfig.example Config/Signing.local.xcconfig
-# Signing.local.xcconfig의 DEVELOPMENT_TEAM을 자기 팀 ID로 바꿉니다 (git에 올라가지 않음)
+cp Config/Signing.local.xcconfig.example Config/Signing.local.xcconfig   # git에 올라가지 않음
 ```
+
+- **자체 서명 인증서 (추천, 무료)**: 키체인 접근 › 인증서 지원 › 인증서 생성에서 이름 `MagicMagicTrack`, 신원 유형 '자체 서명 루트', 인증서 유형 '코드 서명'으로 만듭니다. 서명에 이메일이나 실명이 들어가지 않습니다. 배포본은 이 방식으로 서명합니다.
+- **Apple Development 인증서**: 예시 파일의 2번을 씁니다. 서명에 Apple ID 이름(또는 이메일)이 들어갑니다.
 
 ### 테스트·도구
 

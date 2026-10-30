@@ -24,8 +24,8 @@ git grep -n -I -E "@[a-z0-9.-]+\.[a-z]{2,}|/Users/|Developer ID Application:|App
 
 - 앱 이름·아이콘·버전(정보 섹션)이 맞는지
 - 설정 탭 › 언어에서 한국어 / English 모두 화면이 깨지지 않는지
-- 고정 인증서로 서명했는지 (`codesign -dvv` 의 `Authority`, `TeamIdentifier`)
-- Apple Development 인증서로 서명하면 인증서 이름(이메일)이 앱에 들어간다는 점을 알고 있는지
+- 자체 서명 인증서 `MagicMagicTrack`으로 서명했는지 (`codesign -dvv`의 `Authority=MagicMagicTrack`). Apple Development 인증서로 서명하면 이메일이 앱에 들어감
+- 서명 인증서를 바꾼 첫 버전이면 릴리스 본문에 '손쉬운 사용 권한을 한 번 다시 허용' 안내를 넣었는지
 - `zsh Tests/run_tests.sh`가 통과하는지
 
 ## 3. 문서

@@ -6,7 +6,7 @@
 
 - 사용자가 처음 열 때 "확인되지 않은 개발자" 경고가 나옵니다.
 - 사용자가 **시스템 설정 › 개인정보 보호 및 보안 › 그래도 열기**를 눌러야 합니다. macOS 15부터는 우클릭 › 열기로 넘길 수 없습니다.
-- 앱을 Apple Development 인증서로 서명하면 서명 정보에 인증서 이름(Apple ID 이메일)이 들어가고, 받은 사람이 `codesign -dvv`로 볼 수 있습니다.
+- 앱을 Apple Development 인증서로 서명하면 서명 정보에 인증서 이름(Apple ID 이메일)이 들어가고, 받은 사람이 `codesign -dvv`로 볼 수 있습니다. 그래서 v1.4.0부터는 자체 서명 인증서 `MagicMagicTrack`으로 서명합니다 (README의 '코드 서명').
 
 경고 없이 배포하려면 [공증 준비](../../tools/notarization_setup.md)를 참고하세요.
 

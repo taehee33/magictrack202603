@@ -66,12 +66,14 @@ open /tmp/MagicTrackDerivedData/Build/Products/Debug/MagicMagicTrack.app
 
 ### Code signing
 
-By default the app is ad-hoc signed ("Sign to Run Locally"), so it builds as is. However, an ad-hoc signature changes with every build, so **you have to allow Accessibility again after each build**. Sign with your own certificate to keep the permission across builds.
+By default the app is ad-hoc signed ("Sign to Run Locally"), so it builds as is. However, an ad-hoc signature changes with every build, so **you have to allow Accessibility again after each build**. Keep signing with the same certificate to keep the permission across builds.
 
 ```bash
-cp Config/Signing.local.xcconfig.example Config/Signing.local.xcconfig
-# Set DEVELOPMENT_TEAM in Signing.local.xcconfig to your team ID (not committed to git)
+cp Config/Signing.local.xcconfig.example Config/Signing.local.xcconfig   # not committed to git
 ```
+
+- **Self-signed certificate (recommended, free)**: in Keychain Access › Certificate Assistant › Create a Certificate, use the name `MagicMagicTrack`, identity type "Self Signed Root", and certificate type "Code Signing". The signature contains no email or legal name. Releases are signed this way.
+- **Apple Development certificate**: use option 2 in the example file. The signature contains your Apple ID name (or email).
 
 ### Tests and tools
 
