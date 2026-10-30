@@ -1,0 +1,7 @@
+// 이 파일을 같은 폴더에 Signing.local.xcconfig로 복사하고 자기 팀 ID를 넣는다 (git에 올라가지 않음).
+// 팀 ID: 키체인의 'Apple Development: …' 인증서를 열어 '조직 단위(OU)' 값을 보거나
+//   security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject
+// 결과의 OU= 값. (인증서 이름 괄호 안의 값은 개인 ID라 팀 ID가 아니다)
+
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+CODE_SIGN_IDENTITY = Apple Development

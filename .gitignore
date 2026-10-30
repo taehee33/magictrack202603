@@ -17,3 +17,6 @@ DerivedData/
 # Temporary files
 *.tmp
 *.swp
+
+# 로컬 서명 설정 (팀 ID)
+Config/Signing.local.xcconfig

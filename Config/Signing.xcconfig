@@ -1,0 +1,9 @@
+// 코드 서명 기본값: 이 맥에서만 실행되는 임시 서명(ad-hoc). 누구나 그대로 빌드할 수 있다.
+// 자기 인증서로 서명하려면 Signing.local.xcconfig.example을 Signing.local.xcconfig로 복사해 고친다 (git에 올라가지 않음).
+// 고정된 인증서로 서명해야 다시 빌드해도 손쉬운 사용 권한이 유지된다.
+
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = -
+DEVELOPMENT_TEAM =
+
+#include? "Signing.local.xcconfig"
