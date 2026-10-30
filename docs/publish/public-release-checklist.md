@@ -1,133 +1,49 @@
 # 공개 배포 체크리스트
 
-이 문서는 MagicMagicTrack을 공개 Git 저장소와 GitHub Releases에 올리기 전 확인해야 할 항목을 정리한 체크리스트입니다.
+MagicMagicTrack을 GitHub 저장소와 Releases에 올리기 전에 확인할 항목입니다. 배포 절차는 [GitHub Releases 배포 가이드](github-releases-without-developer-id.md)를 보세요.
 
-## 1. 공개 전 정보 검열
+## 1. 저장소에 개인 정보가 없는지
 
-아래 항목이 저장소에 남아 있지 않은지 확인합니다.
+- 개인 이메일, Apple ID
+- Apple Team ID, 인증서 이름 전체 문자열
+- 앱 전용 비밀번호, 공증 프로필 이름
+- 로컬 절대 경로 (`/Users/...`)
+- 이름·메일이 보이는 스크린샷
 
-- 개인 이메일 주소
-- Apple Team ID
-- 인증서 이름 전체 문자열
-- 로컬 절대 경로
-- 다운로드 폴더 경로
-- 개인 기기 이름
-- 테스트용 임시 계정 정보
-- notarization 프로필명 같은 운영 정보
-
-확인 명령 예시:
+팀 ID는 `Config/Signing.local.xcconfig`에만 두세요. 이 파일은 git에 올라가지 않습니다.
 
 ```bash
-rg -n "YOUR_|@|/Users/|Developer ID Application|Apple Development|TEAMID|notarytool|Notary" .
+git grep -n -I -E "@[a-z0-9.-]+\.[a-z]{2,}|/Users/|Developer ID Application:|Apple Development:|DEVELOPMENT_TEAM = [A-Z0-9]{10}"
 ```
 
-주의:
+결과는 후보일 뿐이라 하나씩 읽고 판단합니다. `YOUR_TEAM_ID` 같은 자리 표시는 괜찮습니다.
 
-- 위 명령은 후보를 넓게 잡는 용도입니다
-- 실제 공개 전에는 각 결과를 직접 읽고 판단해야 합니다
+올리면 안 되는 파일: `.p12`, `.cer`, `.mobileprovision`, `Config/Signing.local.xcconfig`, `dist/`
 
-## 2. 공개 저장소에 올려도 되는 것
+## 2. 배포 파일
 
-- 앱 소스 코드
-- 일반 빌드 스크립트
-- 공개용 문서
-- 설치 가이드
-- 릴리즈 노트
-- 예시용 placeholder 값
+- 앱 이름·아이콘·버전(정보 섹션)이 맞는지
+- 설정 탭 › 언어에서 한국어 / English 모두 화면이 깨지지 않는지
+- 고정 인증서로 서명했는지 (`codesign -dvv` 의 `Authority`, `TeamIdentifier`)
+- Apple Development 인증서로 서명하면 인증서 이름(이메일)이 앱에 들어간다는 점을 알고 있는지
+- `zsh Tests/run_tests.sh`가 통과하는지
 
-예:
+## 3. 문서
 
-- `YOUR_APPLE_ID`
-- `YOUR_TEAM_ID`
-- `Your Name`
+- [README.md](../../README.md), [README.en.md](../../README.en.md): 기능·요구 사항·권한·한계가 이번 버전과 맞는지, 릴리즈 노트 링크 추가
+- [설치 가이드](../install/install-guide-ko.md) / [영어](../install/install-guide-en.md): 화면 이름과 경고 안내가 지금 macOS와 맞는지
+- `docs/release/release-notes-v<버전>.md`, `docs/release/github-release-body-v<버전>.md`
+- [문서 목록](../README.md)에 새 릴리즈 노트 추가
 
-## 3. 공개 저장소에 올리면 안 되는 것
+## 4. 릴리스 본문에 꼭 넣을 것
 
-- 실제 Apple ID 메일
-- 실제 앱 전용 비밀번호
-- 실제 Team ID와 결합된 인증서 정보
-- 인증서 파일
-- `.p12`
-- `.cer`
-- 개인 키체인 설정
-- 개인 테스트 스크린샷 중 이름/메일이 보이는 것
-- 로컬 개발 경로가 적힌 배포 문서
+- "확인되지 않은 개발자" 경고가 나오는 이유와 **그래도 열기** 안내
+- 필요한 권한 (90° 회전에만 손쉬운 사용)
+- 이전 버전에서 업데이트할 때 권한을 다시 허용해야 하는지
+- 알려진 한계
 
-## 4. 문서 점검
+## 5. 올린 뒤
 
-확인할 문서:
-
-- `README.md`
-- `docs/install-guide-ko.md`
-- `docs/install-guide-en.md`
-- `docs/github-releases-without-developer-id.md`
-- `docs/github-release-template-v1.1.0.md`
-- `docs/release-notes-v1.1.0.md`
-
-점검 항목:
-
-- 절대 경로 제거
-- 개인 이름/메일 제거
-- 실제 인증서 문자열 제거
-- 팀 ID 제거
-- 로컬 테스트 전용 문구 제거
-
-## 5. 배포 파일 점검
-
-- `.dmg`
-- `.zip`
-- `README`
-- 릴리즈 노트
-
-확인할 것:
-
-- 아이콘이 정상인지
-- 앱 이름이 올바른지
-- 버전 정보가 맞는지
-- 권한 안내가 있는지
-- 제한 사항이 정확한지
-
-## 6. GitHub Releases 업로드 전
-
-- 태그명 확인
-  - 예: `v1.1.0`
-- 제목 확인
-  - 예: `MagicTrack v1.1.0`
-- 첨부 파일 확인
-- 릴리즈 본문 확인
-- 설치 가이드 링크 확인
-
-## 7. 인증서 없이 배포할 때 꼭 써야 하는 문구
-
-```text
-이 배포본은 아직 Apple Developer ID 서명 및 notarization이 적용되지 않았습니다.
-처음 실행 시 macOS 보안 경고가 나타날 수 있습니다.
-문제가 발생하면 설치 가이드를 참고해주세요.
-```
-
-## 8. 사용자 문의를 줄이기 위한 필수 안내
-
-- 어떤 권한이 필요한지
-- 어떤 기능이 실험 기능인지
-- 어떤 기능이 현재 미지원인지
-- 왜 보안 경고가 뜨는지
-- 설치 실패 시 어디서 허용하는지
-
-## 9. 공개 전 최종 확인
-
-- 저장소에 개인 정보 없음
-- 문서에 절대 경로 없음
-- 빌드 성공
-- 설치 테스트 완료
-- 릴리즈 본문 준비 완료
-- 첨부 파일 준비 완료
-
-## 10. 다음 단계
-
-향후 더 많은 사용자에게 안정적으로 배포하려면:
-
-1. Apple Developer Program 가입
-2. Developer ID Application 인증서 발급
-3. notarization 적용
-4. 서명된 DMG 재배포
-
+- 릴리스가 Latest인지, 첨부 파일 체크섬이 맞는지
+- 받은 dmg로 새로 설치해서 실행되는지
+- 앱의 '새 버전 확인'이 새 릴리스를 찾는지

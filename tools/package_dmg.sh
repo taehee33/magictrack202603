@@ -8,10 +8,14 @@ STAGING_DIR="$DIST_DIR/dmg-staging"
 
 source "$ROOT_DIR/tools/version.sh"
 APP_NAME="MagicMagicTrack"
-APP_PATH="$DERIVED_DATA_PATH/Build/Products/Release/${APP_NAME}.app"
+# APP_PATH를 넘기면 그 앱으로 dmg만 만든다 (sign_and_notarize.sh가 다시 서명한 앱을 넘김)
+APP_PATH="${APP_PATH:-}"
 DMG_PATH="$DIST_DIR/${APP_NAME}-${VERSION}-${BUILD}.dmg"
 
-"$ROOT_DIR/tools/package_release.sh" >/dev/null
+if [[ -z "$APP_PATH" ]]; then
+  "$ROOT_DIR/tools/package_release.sh" >/dev/null
+  APP_PATH="$DERIVED_DATA_PATH/Build/Products/Release/${APP_NAME}.app"
+fi
 
 rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR"

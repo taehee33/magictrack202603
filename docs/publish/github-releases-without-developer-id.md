@@ -1,185 +1,64 @@
-# GitHub Releases 배포 가이드
+# GitHub Releases 배포 가이드 (Developer ID 없이)
 
-이 문서는 `Developer ID Application` 인증서와 notarization 없이, 현재 빌드한 앱을 GitHub Releases로 먼저 배포하는 방법을 설명합니다.
-
-중요:
-
-- 이 방식은 `배포 자체는 가능`하지만, macOS 사용자 입장에서는 경고가 발생할 수 있습니다.
-- 많은 사람에게 매끄럽게 배포하려면 나중에 반드시 `Developer ID Application` 인증서와 notarization을 붙이는 것이 맞습니다.
-
-## 이 방식이 적합한 경우
-
-- 지인 테스트
-- 클로즈드 베타
-- 초기 피드백 수집
-- 제품 방향 검증
+`Developer ID Application` 인증서와 공증 없이 GitHub Releases로 배포하는 방법입니다. v1.2.0, v1.3.0을 이 방식으로 배포했습니다.
 
 ## 이 방식의 한계
 
-- 다운로드 후 바로 실행되지 않을 수 있음
-- 사용자에게 `우클릭 > 열기` 안내가 필요할 수 있음
-- `시스템 설정 > 개인정보 보호 및 보안 > 그래도 열기` 절차가 필요할 수 있음
-- 보안 경고 때문에 일반 사용자는 설치를 중단할 가능성이 높음
+- 사용자가 처음 열 때 "확인되지 않은 개발자" 경고가 나옵니다.
+- 사용자가 **시스템 설정 › 개인정보 보호 및 보안 › 그래도 열기**를 눌러야 합니다. macOS 15부터는 우클릭 › 열기로 넘길 수 없습니다.
+- 앱을 Apple Development 인증서로 서명하면 서명 정보에 인증서 이름(Apple ID 이메일)이 들어가고, 받은 사람이 `codesign -dvv`로 볼 수 있습니다.
 
-## 1. 배포 파일 준비
+경고 없이 배포하려면 [공증 준비](../../tools/notarization_setup.md)를 참고하세요.
 
-프로젝트 루트에서:
+## 1. 버전 올리기
 
-```bash
-zsh tools/package_release.sh
-zsh tools/package_dmg.sh
-```
+Xcode 빌드 설정 `MARKETING_VERSION`(예: `1.3.0`)과 `CURRENT_PROJECT_VERSION`(예: `5`)을 올립니다. 배포 스크립트는 [tools/version.sh](../../tools/version.sh)로 이 값을 읽습니다.
 
-생성 파일은 `dist/` 폴더에 위치합니다.
-
-예:
-
-- `MagicTrack-1.1.0-2-macOS.zip`
-- `MagicTrack-1.1.0-2.dmg`
-
-권장:
-
-- 가능하면 `.dmg`와 `.zip`를 둘 다 올립니다
-- 일반 사용자는 `.dmg`를 더 익숙하게 느낍니다
-- 문제가 생겼을 때를 대비해 `.zip`도 함께 제공합니다
-
-## 2. GitHub 저장소 준비
-
-GitHub 저장소가 없다면 새 저장소를 만듭니다.
-
-권장 공개 구성:
-
-- 저장소 이름: `MagicTrack`
-- 공개 여부: 목적에 따라 선택
-  - 오픈소스면 `Public`
-  - 베타 테스트면 `Private`도 가능
-
-## 3. Release 만들기
-
-1. GitHub 저장소 이동
-2. 오른쪽 `Releases` 클릭
-3. `Draft a new release`
-4. 태그 입력
-   - 예: `v1.1.0`
-5. 제목 입력
-   - 예: `MagicTrack v1.1.0`
-6. 배포 파일 업로드
-   - `.dmg`
-   - `.zip`
-
-## 4. Release 본문에 꼭 넣을 항목
-
-아래 항목은 꼭 포함해야 합니다.
-
-### 4-1. 앱 설명
-
-- 내장 트랙패드와 매직 트랙패드 설정을 분리 저장하고 적용하는 macOS 앱
-
-### 4-2. 현재 버전 주요 기능
-
-- 내장/매직 트랙패드 설정 분리 저장
-- 이동 속도 / 스크롤 속도 / 클릭 압력 조절
-- 프리셋 저장 및 적용
-- 앱 자동전환 규칙 설정
-- Dock / 메뉴바 표시 설정
-
-### 4-3. 실험적 또는 제한된 기능
-
-- 매직 트랙패드 회전 설정은 현재 UI/저장 중심 기능
-- Apple 트랙패드의 실입력 감지, 좌표/제스처 감지, 입력 기반 자동화는 미지원 또는 실험 상태
-- Apple 플랫폼 제약으로 완전한 실시간 독립 감도 제어는 제한됨
-
-### 4-4. 권한 안내
-
-- 입력 모니터링 권한
-- 손쉬운 사용 권한
-
-### 4-5. 인증서 없음 안내
-
-아래 같은 문구를 반드시 넣는 것이 좋습니다.
-
-예시:
-
-```text
-이 빌드는 아직 Apple Developer ID 서명 및 notarization이 적용되지 않았습니다.
-처음 실행 시 macOS 보안 경고가 나타날 수 있습니다.
-문제가 발생하면 설치 가이드의 "보안 경고 해결 방법"을 참고해주세요.
-```
-
-## 5. GitHub Releases 본문 예시
-
-아래 텍스트는 바로 수정해서 올릴 수 있는 초안입니다.
-
-```md
-## MagicTrack v1.1.0
-
-MagicTrack는 맥북 내장 트랙패드와 블루투스 매직 트랙패드의 설정을 분리 저장하고, 원하는 시점에 빠르게 적용할 수 있게 만든 macOS 앱입니다.
-
-### 포함 기능
-
-- 내장/매직 트랙패드 설정 분리 저장
-- 이동 속도 / 스크롤 속도 / 클릭 압력 조절
-- 프리셋 저장 및 적용
-- 앱 자동전환 규칙 관리
-- Dock / 메뉴바 표시 설정
-- option + M 빠른 전환
-
-### 권한
-
-앱 사용 시 다음 권한이 필요할 수 있습니다.
-
-- 입력 모니터링
-- 손쉬운 사용
-
-### 제한 사항
-
-- 매직 트랙패드 회전은 현재 UI/저장 중심의 실험 기능입니다
-- Apple 트랙패드의 실입력 감지 / 좌표·제스처 감지 / 입력 기반 자동화는 현재 미지원입니다
-- Apple 플랫폼 제약으로 완전한 실시간 독립 감도 제어에는 제한이 있습니다
-
-### 설치 전 주의
-
-이 빌드는 아직 Apple Developer ID 서명 및 notarization이 적용되지 않았습니다.
-처음 실행 시 macOS 보안 경고가 나타날 수 있습니다.
-문제가 발생하면 설치 가이드를 참고해주세요.
-```
-
-## 6. 업로드 권장 파일
-
-릴리즈마다 아래 파일 구성을 추천합니다.
-
-- `MagicMagicTrack-x.y.z.dmg`
-- `MagicMagicTrack-x.y.z.zip`
-- `SHA256.txt` 선택 사항
-- `릴리즈 노트` 본문
-
-## 7. SHA256 체크섬도 같이 올리면 좋은 이유
-
-많은 사람에게 배포할수록 파일 무결성 확인 수요가 생깁니다.
-
-생성 예시:
+## 2. 배포 파일 만들기
 
 ```bash
-shasum -a 256 dist/MagicTrack-1.1.0-2.dmg > dist/SHA256.txt
-shasum -a 256 dist/MagicTrack-1.1.0-2-macOS.zip >> dist/SHA256.txt
+zsh tools/package_dmg.sh        # Release 빌드 + zip + dmg
+cd dist && shasum -a 256 MagicMagicTrack-*.dmg MagicMagicTrack-*-macOS.zip > SHA256.txt
 ```
 
-## 8. 사용자 문의를 줄이는 팁
+`dist/`에 생기는 파일:
 
-릴리즈 본문에 아래를 미리 써두는 게 좋습니다.
+- `MagicMagicTrack-<버전>-<빌드>.dmg`
+- `MagicMagicTrack-<버전>-<빌드>-macOS.zip`
+- `SHA256.txt`
 
-- 어떤 권한이 필요한지
-- 어떤 기능이 실험 상태인지
-- 왜 자동 감지가 완전하지 않은지
-- 보안 경고가 뜰 수 있는 이유
-- 설치 문제 발생 시 어디를 눌러야 하는지
+권한이 다음 업데이트에도 유지되도록 고정 인증서로 서명해 빌드하세요 (README의 '코드 서명' 참고). 임시 서명으로 배포하면 사용자가 업데이트마다 손쉬운 사용 권한을 다시 허용해야 합니다.
 
-## 9. 다음 단계
+## 3. 릴리스 문서 쓰기
 
-많은 사람에게 지속적으로 배포할 계획이면 다음이 필요합니다.
+- `docs/release/release-notes-v<버전>.md`: 자세한 릴리즈 노트
+- `docs/release/github-release-body-v<버전>.md`: GitHub 릴리스 본문
 
-1. Apple Developer Program 가입
-2. Developer ID Application 인증서 발급
-3. notarization 적용
-4. 서명된 DMG 재배포
+본문에 꼭 넣을 것 ([v1.3.0 본문](../release/github-release-body-v1.3.0.md) 참고):
 
+- 새 기능 · 고친 문제 · 바뀐 점
+- 이전 버전에서 업데이트할 때 알아둘 점 (권한을 다시 허용해야 하는지 등)
+- 설치 방법과 "확인되지 않은 개발자" 경고 안내 ([설치 가이드](../install/install-guide-ko.md) 링크)
+- 필요한 권한, 요구 사항, 알려진 한계
+- 첨부 파일 목록
+
+## 4. 커밋 · 태그 · 릴리스
+
+```bash
+git tag v1.3.0
+git push github main v1.3.0
+gh release create v1.3.0 \
+  dist/MagicMagicTrack-1.3.0-5.dmg \
+  dist/MagicMagicTrack-1.3.0-5-macOS.zip \
+  dist/SHA256.txt \
+  --repo taehee33/magictrack202603 \
+  --title "MagicMagicTrack v1.3.0" \
+  --notes-file docs/release/github-release-body-v1.3.0.md
+```
+
+## 5. 올린 뒤 확인
+
+- 릴리스가 **Latest**로 표시되는지
+- 첨부한 dmg·zip을 받아 `shasum -a 256`이 `SHA256.txt`와 같은지
+- 본문의 링크(릴리즈 노트, 설치 가이드)가 열리는지
+- 받은 dmg로 설치해서 경고 → 그래도 열기 → 실행까지 되는지

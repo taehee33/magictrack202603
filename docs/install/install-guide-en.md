@@ -1,155 +1,127 @@
 # MagicMagicTrack Installation Guide
 
-This guide explains how users can install and run MagicMagicTrack on macOS.
+How to install MagicMagicTrack and open it for the first time.
 
-Important:
-
-- Some distributed builds may not yet be signed with an Apple Developer ID certificate.
-- In that case, macOS may show stronger security warnings on first launch.
+The app is currently distributed without Apple Developer ID signing and notarization, so macOS shows a security warning the first time you open it. Allow it once as described in section 3 and the app opens normally after that.
 
 ## 1. Download
 
-Download one of the following files from the release page:
+Download one of these files from [Releases](https://github.com/taehee33/magictrack202603/releases/latest).
 
-- Recommended: `.dmg`
-- Alternative: `.zip`
+- Recommended: `MagicMagicTrack-<version>.dmg`
+- Alternative: `MagicMagicTrack-<version>-macOS.zip`
+- `SHA256.txt`: to check that the downloaded file was not altered (optional)
+
+```bash
+shasum -a 256 ~/Downloads/MagicMagicTrack-*.dmg
+```
+
+If the output matches the value in `SHA256.txt`, the file is intact.
 
 ## 2. Install
 
-### Install from DMG
+### DMG
 
-1. Double-click the `.dmg` file
-2. Drag `MagicMagicTrack.app` into the `Applications` folder
-3. Open `Applications` and confirm the app is there
+1. Double-click the `.dmg` file.
+2. Drag `MagicMagicTrack.app` into the `Applications` folder.
 
-### Install from ZIP
+### ZIP
 
-1. Double-click the `.zip` file
-2. Locate the extracted `MagicMagicTrack.app`
-3. Move it into the `Applications` folder
+1. Double-click the `.zip` file to extract it.
+2. Move `MagicMagicTrack.app` into the `Applications` folder.
 
-Recommendation:
+Always run the app from the `Applications` folder. Running it straight from Downloads can keep permissions from sticking.
 
-- Run the app from `Applications`
-- Do not run it directly from `Downloads`
+If you have the old `MagicTrack.app`, delete it. Settings, presets, and app rules carry over.
 
-## 3. First Launch
+## 3. First launch ("unidentified developer" warning)
 
-If the app opens normally, you should see the app window or the menu bar icon.
+1. Double-click `MagicMagicTrack.app` in the `Applications` folder.
+2. When a warning such as "Apple could not verify 'MagicMagicTrack' is free of malware" appears, click **Done** (or Cancel).
+3. Open **System Settings › Privacy & Security** and scroll down.
+4. Next to "'MagicMagicTrack' was blocked", click **Open Anyway**.
+5. Confirm with your password or Touch ID, then click **Open Anyway** again.
 
-If the build is not signed/notarized yet, macOS may show warnings such as:
+After you allow it once, the app opens normally.
 
-- Unidentified developer
-- Apple cannot verify this app
-- The app cannot be opened for security reasons
+> Since macOS 15, right-click › Open no longer bypasses this warning. Use **Open Anyway** in System Settings.
 
-## 4. Best First Attempt
+### If you see "is damaged and can't be opened"
 
-1. Open the `Applications` folder
-2. Right-click `MagicMagicTrack.app`
-3. Click `Open`
-4. Click `Open` again if macOS asks for confirmation
+This can be caused by the quarantine flag attached to downloaded files. After moving the app to `Applications`, run this in Terminal and open the app again.
 
-This works better than double-clicking for unsigned builds.
+```bash
+xattr -dr com.apple.quarantine /Applications/MagicMagicTrack.app
+```
 
-## 5. If the App Still Does Not Open
+## 4. Permissions
 
-### Method A: Allow from System Settings
+| Feature | Permission |
+|---|---|
+| Speed, scrolling, click pressure, automatic switching, app rules, 180° rotation | None |
+| Magic Trackpad Left / Right 90° rotation | Accessibility |
 
-1. Open `System Settings`
-2. Go to `Privacy & Security`
-3. Scroll down
-4. Look for a blocked app message related to `MagicMagicTrack`
-5. Click `Open Anyway`
+If you turn on 90° rotation without the permission, the Magic Trackpad card shows a notice.
 
-Then try launching the app again.
+1. Click **Open Permissions** on the card (or go to **System Settings › Privacy & Security › Accessibility**).
+2. Turn on `MagicMagicTrack` in the list.
 
-### Method B: Try Right-Click > Open Again
+Rotation starts right away; no relaunch needed. If `MagicMagicTrack` appears more than once in the list, you can remove the old entries.
 
-In some cases:
+## 5. Basic use
 
-1. Launch is blocked once
-2. The second attempt using right-click > open succeeds
+### Trackpad tab
 
-## 6. Permissions
-
-MagicMagicTrack may require macOS permissions for some features.
-
-### Input Monitoring
-
-May be needed for:
-
-- Trackpad configuration related behavior
-
-Path:
-
-1. `System Settings`
-2. `Privacy & Security`
-3. `Input Monitoring`
-4. Enable `MagicMagicTrack`
-
-### Accessibility
-
-May be needed for:
-
-- App auto-switching behavior
-
-Path:
-
-1. `System Settings`
-2. `Privacy & Security`
-3. `Accessibility`
-4. Enable `MagicMagicTrack`
-
-After changing permissions, relaunching the app is recommended.
-
-## 7. Basic Usage
-
-### Trackpads tab
-
-- Adjust internal trackpad settings
-- Adjust Magic Trackpad settings
-- Apply settings manually
+- Cards for the built-in trackpad and the Magic Trackpad appear side by side.
+- Set tracking speed, scrolling speed, and click pressure per card. Changes apply immediately.
+- **Switch mode**: Auto (uses the settings of the trackpad you touch) / Built-in Only / Magic Only
+- Choose the rotation (None · 180° · Left 90° · Right 90°) on the Magic Trackpad card.
+- Each setting can be reset to "My Default" or "Mac Default".
 
 ### Presets tab
 
-- Save current settings
-- Apply saved presets
+- Save the current settings as a preset; edit, duplicate, or delete presets.
+- **App rules**: apply a preset automatically when you use a specific app.
 
 ### Settings tab
 
-- Enable or disable app auto-switching
-- Show or hide the app in the Dock while running
-- Show or hide the app in the menu bar while running
+- Launch at login, Dock and menu bar icons, showing the trackpad in use and its rotation in the menu bar
+- Language (한국어 / English)
+- Switch mode shortcut (`⌃⌥M` by default; can be changed or turned off)
+- Check for new versions
 
-### Quick switching
+### Menu bar
 
-- Shortcut: `control + option + M` (change or turn off in the Settings tab)
-- Quickly switch between internal and Magic Trackpad profiles
+Next to the menu bar icon, the trackpad in use and its rotation are shown as `Built-in`, `Magic L 90°`, and so on. Click it to change the switch mode or preset.
 
-## 8. Current Limitations
+**System Settings values are never changed.** The app only overrides the running values while it is open; quitting restores the System Settings values.
 
-- Real-time raw input detection for Apple trackpads is not supported
-- Coordinate and gesture detection are not supported
-- Input-driven automation is not supported
-- Magic Trackpad rotation is currently experimental
-- Full real-time independent sensitivity control is limited by Apple platform behavior
+## 6. Known limitations
 
-## 9. Troubleshooting Checklist
+- The app uses private macOS features. A macOS update may break some features. If automatic switching is unavailable, the app falls back to a fixed mode.
+- At 90°, two-finger page swipes (back / forward) are not rotated.
+- It installs on macOS 14 or later, but has only been tested on macOS 27.
 
-1. Make sure the app is in `Applications`
-2. Try right-click > `Open`
-3. Check `Privacy & Security > Open Anyway`
-4. Grant Input Monitoring / Accessibility if requested
-5. Quit and relaunch the app
+## 7. Troubleshooting checklist
 
-## 10. Why This Happens
+1. Did you run the app from the `Applications` folder?
+2. Did you click **Privacy & Security › Open Anyway**?
+3. If you see "is damaged and can't be opened", did you run the `xattr` command in section 3?
+4. If 90° rotation does not work, is `MagicMagicTrack` turned on under **Accessibility**?
+5. If it still does not work, quit from the menu bar icon and open the app again.
 
-Unsigned builds are treated more strictly by macOS Gatekeeper.
+When reporting a problem, turn on Settings tab › Advanced › **Developer Mode** to show the device and switching log below the Trackpad tab. Take a screenshot and post it to [Issues](https://github.com/taehee33/magictrack202603/issues).
 
-For a smoother public release, the app should eventually be distributed with:
+## 8. FAQ
 
-- Apple Developer Program membership
-- Developer ID Application certificate
-- notarization
+### Why is there a warning the first time?
 
+The app is distributed without Apple Developer ID signing and notarization, so macOS cannot verify the developer. Once you allow it, the warning does not appear again.
+
+### Is it malware?
+
+No. The full source code is on [GitHub](https://github.com/taehee33/magictrack202603), and you can build it yourself.
+
+### Why is it not on the Mac App Store?
+
+It needs private macOS features and runs outside the sandbox, which App Store rules do not allow.
