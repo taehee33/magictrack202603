@@ -36,6 +36,8 @@ final class RotationEngine: ObservableObject {
     /// 회전된 커서 위치
     private var cursor = CGPoint.zero
     private var lastScrollFromMagic = false
+    /// 마지막으로 매직 트랙패드 스크롤로 처리한 시각. 출처 없는 스크롤은 이 직후(관성)일 때만 매직으로 본다
+    private var lastMagicScrollTime: CFAbsoluteTime = 0
     private static let senderField = CGEventField(rawValue: 87)!
     private static let moveTypes: Set<CGEventType> = [.mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged]
 
@@ -239,10 +241,15 @@ final class RotationEngine: ObservableObject {
 
         if type == .scrollWheel {
             // 출처가 0인 스크롤(관성, 느린 스크롤의 일부)은 직전 스크롤의 출처를 따른다
+            // 출처가 0인 스크롤에는 매직의 관성 스크롤뿐 아니라 Logi Options+ 같은 앱이 다시 보내는 마우스 휠도 있다.
+            // 매직 스크롤 바로 뒤(0.2초 안)에 이어지는 것만 매직으로 보고, 그 밖의 출처 없는 스크롤은 그대로 둔다
+            let now = CFAbsoluteTimeGetCurrent()
             if sender != 0 { lastScrollFromMagic = fromMagic }
-            guard fromMagic || (sender == 0 && lastScrollFromMagic) else {
+            let continuesMagic = sender == 0 && lastScrollFromMagic && now - lastMagicScrollTime < 0.2
+            guard fromMagic || continuesMagic else {
                 return Unmanaged.passUnretained(event)
             }
+            lastMagicScrollTime = now
             guard let rotated = rotatedScrollEvent(from: event) else { return Unmanaged.passUnretained(event) }
             rotated.post(tap: .cgSessionEventTap)
             rotatedEventCount += 1
