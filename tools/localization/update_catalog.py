@@ -11,6 +11,9 @@ from en import EN  # noqa: E402
 # 번역이 필요 없는 문구 (기호·숫자만)
 SKIP = {"", "%lld", "·", "%@ · %@", "VID %@ · PID %@"}
 
+# 코드에서 더 이상 쓰지 않는 문구가 남지 않도록 빈 카탈로그에서 다시 뽑는다
+CATALOG.write_text(json.dumps({"sourceLanguage": "ko", "strings": {}, "version": "1.0"}, indent=2) + "\n", encoding="utf-8")
+
 with tempfile.TemporaryDirectory() as tmp:
     subprocess.run(["xcodebuild", "-exportLocalizations", "-project", str(ROOT / "MagicTrack.xcodeproj"),
                     "-localizationPath", tmp, "-exportLanguage", "en"], check=True, capture_output=True)
@@ -34,9 +37,6 @@ for key in sorted(keys):
         strings[key] = {"shouldTranslate": False}
         continue
     strings[key] = {"localizations": {"en": {"stringUnit": {"state": "translated", "value": EN[key]}}}}
-# 언어 선택 문구처럼 아직 코드에서 못 뽑은 항목도 번역표에 있으면 넣는다
-for key, value in EN.items():
-    strings.setdefault(key, {"localizations": {"en": {"stringUnit": {"state": "translated", "value": value}}}})
 
 CATALOG.write_text(json.dumps({"sourceLanguage": "ko", "strings": strings, "version": "1.0"},
                               ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")

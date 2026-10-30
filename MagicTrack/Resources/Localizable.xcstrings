@@ -1566,12 +1566,12 @@
         }
       }
     },
-    "포인터·스크롤·드래그가 회전돼요 (제스처는 제외, 손쉬운 사용 권한 사용)": {
+    "포인터·스크롤·드래그와 세·네 손가락 쓸어넘기기가 회전돼요 (두 손가락 페이지 넘기기는 제외, 손쉬운 사용 권한 사용)": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pointer, scrolling, and dragging are rotated (not gestures; uses Accessibility permission)"
+            "value": "Pointer, scrolling, dragging, and three- or four-finger swipes are rotated (not two-finger page swipes; uses Accessibility permission)"
           }
         }
       }

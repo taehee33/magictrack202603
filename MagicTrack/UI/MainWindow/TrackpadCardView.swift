@@ -471,7 +471,7 @@ struct RotationStatusView: View {
                 .font(.system(size: compact ? 11 : 10, weight: .medium))
                 .foregroundStyle(.secondary)
         } else {
-            Label(engine.isRunning ? String(localized: "포인터·스크롤·드래그가 회전돼요 (제스처는 제외, 손쉬운 사용 권한 사용)") : String(localized: "매직 트랙패드를 돌려 놓고 쓸 때 방향을 맞춰요"),
+            Label(engine.isRunning ? String(localized: "포인터·스크롤·드래그와 세·네 손가락 쓸어넘기기가 회전돼요 (두 손가락 페이지 넘기기는 제외, 손쉬운 사용 권한 사용)") : String(localized: "매직 트랙패드를 돌려 놓고 쓸 때 방향을 맞춰요"),
                   systemImage: engine.isRunning ? "checkmark.circle" : "info.circle")
                 .font(.system(size: compact ? 11 : 10, weight: .medium))
                 .foregroundStyle(.secondary)

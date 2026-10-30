@@ -6,7 +6,7 @@ import IOKit.hid
 // MARK: - RotationEngine
 // 매직 트랙패드의 포인터 이동·드래그·스크롤을 회전시킨다 (시제품: 실측/rotate, 기록: 03·04 문서).
 // - 180°: 멀티터치 드라이버의 표면 방향 설정(MTDeviceSetSurfaceOrientation)으로 처리 → 포인터·스크롤·제스처 모두, 권한 불필요
-// - 90°: 드라이버가 지원하지 않아 이벤트 탭으로 처리 (손쉬운 사용 권한 필요, 제스처 제외)
+// - 90°: 드라이버가 지원하지 않아 이벤트 탭으로 처리 (손쉬운 사용 권한 필요). 세·네 손가락 쓸어넘기기도 회전, 두 손가락 페이지 넘기기는 제외
 // - 대상 판별: 이벤트 비공개 필드 87 = 보낸 HID 서비스 ID (0단계 실측). 스크롤 관성 이벤트는 0으로 오므로 직전 출처를 이어 씀
 // - 포인터: 원본 이벤트에 담긴 HID 데이터로 시스템이 커서를 다시 움직여 떨리므로, 원본을 버리고 회전된 새 이벤트를 보냄
 // - 스크롤: 원본 필드를 고치면 앱이 무시하므로 원본을 버리고 회전된 연속 스크롤 이벤트를 새로 보냄
@@ -26,6 +26,9 @@ final class RotationEngine: ObservableObject {
     private var magicConnected = false
     private var tap: CFMachPort?
     private var tapSource: CFRunLoopSource?
+    /// 네 손가락 쓸어넘기기(Dock 제어 이벤트)는 HID 단계 뒤에 만들어져 세션 단계에서 따로 받는다
+    private var swipeTap: CFMachPort?
+    private var swipeTapSource: CFRunLoopSource?
     private var permissionTimer: Timer?
 
     // 이벤트 탭 콜백(메인 런루프)에서만 접근
@@ -132,7 +135,35 @@ final class RotationEngine: ObservableObject {
         self.tapSource = source
         idleTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in self?.idleCheck() }
         isRunning = true
+        startSwipeTap()
         print("🔄 회전 시작: \(rotation.displayName)")
+    }
+
+    private func startSwipeTap() {
+        guard swipeTap == nil else { return }
+        let mask: CGEventMask = CGEventMask(1) << Self.dockControlType
+        let callback: CGEventTapCallBack = { _, type, event, userInfo in
+            guard let userInfo else { return Unmanaged.passUnretained(event) }
+            return Unmanaged<RotationEngine>.fromOpaque(userInfo).takeUnretainedValue().handleSwipe(type: type, event: event)
+        }
+        guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
+                                          eventsOfInterest: mask, callback: callback,
+                                          userInfo: Unmanaged.passUnretained(self).toOpaque()) else {
+            print("❌ 쓸어넘기기 회전 탭 생성 실패")
+            return
+        }
+        let source = CFMachPortCreateRunLoopSource(nil, tap, 0)
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
+        swipeTap = tap
+        swipeTapSource = source
+    }
+
+    private func stopSwipeTap() {
+        if let swipeTap { CGEvent.tapEnable(tap: swipeTap, enable: false) }
+        if let swipeTapSource { CFRunLoopRemoveSource(CFRunLoopGetMain(), swipeTapSource, .commonModes) }
+        swipeTap = nil
+        swipeTapSource = nil
     }
 
     private func stopTap() {
@@ -144,6 +175,7 @@ final class RotationEngine: ObservableObject {
         if let tapSource { CFRunLoopRemoveSource(CFRunLoopGetMain(), tapSource, .commonModes) }
         tap = nil
         tapSource = nil
+        stopSwipeTap()
         if isRunning { print("🔄 회전 중지") }
         isRunning = false
     }
@@ -306,6 +338,142 @@ final class RotationEngine: ObservableObject {
     }
 
     /// 트랙패드가 시계 방향으로 놓인 각도만큼 입력을 되돌린다 (오른쪽 90°: 손가락 → 오른쪽이 패드 기준 위쪽으로 들어옴)
+    // MARK: - 네 손가락 쓸어넘기기 (시험)
+    // 실측(2026-10-30, 개발자 모드 기록): 매직 트랙패드의 세·네 손가락 쓸어넘기기는 Dock 제어 이벤트(종류 30)로 오고
+    // 비공개 필드 110 = 23(DockSwipe), 123 = 축(1 좌우: 데스크톱 전환, 2 위아래: Mission Control),
+    // 124 = 누적 진행(부호가 방향), 135 = 124의 Float32 비트, 125·126 = 이번 이동(좌우 진행, -위아래 진행), 129·130 = 끝날 때 속도.
+    // 좌우 진행은 손가락 오른쪽이 음수, 위아래 진행은 위가 양수.
+    // 90°에서는 축을 바꾸고 방향을 맞춰 원본 이벤트를 그대로 고쳐 보낸다 (macOS가 고친 값을 따르는지 시험)
+
+    private static let dockControlType: UInt32 = 30
+    private static func field(_ index: UInt32) -> CGEventField { CGEventField(rawValue: index)! }
+
+    private func handleSwipe(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let swipeTap { CGEvent.tapEnable(tap: swipeTap, enable: true) }
+            return Unmanaged.passUnretained(event)
+        }
+        let sender = UInt64(bitPattern: event.getIntegerValueField(Self.senderField))
+        guard type.rawValue == Self.dockControlType, magicServiceIDs.contains(sender),
+              event.getIntegerValueField(Self.field(110)) == 23 else {
+            return Unmanaged.passUnretained(event)
+        }
+        let axis = event.getIntegerValueField(Self.field(123))
+        guard axis == 1 || axis == 2 else { return Unmanaged.passUnretained(event) }
+
+        // 진행 값(좌우 h, 위아래 v) ↔ 화면 좌표(x 오른쪽+, y 아래+)
+        func toScreen(_ h: Double, _ v: Double) -> (Double, Double) { (-h, -v) }
+        func fromScreen(_ x: Double, _ y: Double) -> (h: Double, v: Double) { (-x, -y) }
+
+        let progress = event.getDoubleValueField(Self.field(124))
+        let (px, py) = rotate(toScreen(axis == 1 ? progress : 0, axis == 2 ? progress : 0).0,
+                              toScreen(axis == 1 ? progress : 0, axis == 2 ? progress : 0).1)
+        // 축은 회전으로만 정해진다 (90°면 바뀌고 180°면 그대로)
+        let newAxis: Int64 = rotationSwapsAxes ? (axis == 1 ? 2 : 1) : axis
+        let rotated = fromScreen(px, py)
+        let newProgress = newAxis == 1 ? rotated.h : rotated.v
+
+        // 이번 이동과 끝 속도도 같은 방향으로 (125: 좌우 진행, 126: -위아래 진행)
+        func rotatePair(_ hIndex: UInt32, _ vIndex: UInt32) {
+            let h = event.getDoubleValueField(Self.field(hIndex))
+            let v = -event.getDoubleValueField(Self.field(vIndex))
+            let (x, y) = toScreen(h, v)
+            let (rx, ry) = rotate(x, y)
+            let r = fromScreen(rx, ry)
+            event.setDoubleValueField(Self.field(hIndex), value: r.h)
+            event.setDoubleValueField(Self.field(vIndex), value: -r.v)
+        }
+
+        // macOS 27의 Dock은 이벤트에 붙은 IOHID 원본을 읽으므로 원본도 같이 회전한다
+        rotateAttachedHIDEvent(of: event) { h, v in
+            let (x, y) = rotate(toScreen(h, v).0, toScreen(h, v).1)
+            return fromScreen(x, y)
+        }
+        event.setIntegerValueField(Self.field(123), value: newAxis)
+        event.setDoubleValueField(Self.field(124), value: newProgress)
+        event.setIntegerValueField(Self.field(135), value: Int64(Float(newProgress).bitPattern))
+        rotatePair(125, 126)
+        rotatePair(129, 130)
+        rotatedEventCount += 1
+        return Unmanaged.passUnretained(event)
+    }
+
+    private var rotationSwapsAxes: Bool { rotation == .left90 || rotation == .right90 }
+
+    // MARK: IOHID 원본 (비공개 함수, dlsym으로 찾음. 없으면 아무것도 하지 않음)
+
+    private typealias CopyHIDFn = @convention(c) (CGEvent) -> Unmanaged<CFTypeRef>?
+    private typealias SetHIDFn = @convention(c) (CGEvent, CFTypeRef?) -> Void
+    private typealias GetTypeFn = @convention(c) (CFTypeRef) -> UInt32
+    private typealias GetIntFn = @convention(c) (CFTypeRef, UInt32) -> Int
+    private typealias SetIntFn = @convention(c) (CFTypeRef, UInt32, Int) -> Void
+    private typealias GetFloatFn = @convention(c) (CFTypeRef, UInt32) -> Double
+    private typealias SetFloatFn = @convention(c) (CFTypeRef, UInt32, Double) -> Void
+    private typealias GetChildrenFn = @convention(c) (CFTypeRef) -> Unmanaged<CFArray>?
+
+    private struct HIDFunctions {
+        let copy: CopyHIDFn, set: SetHIDFn, type: GetTypeFn, getInt: GetIntFn, setInt: SetIntFn
+        let getFloat: GetFloatFn, setFloat: SetFloatFn, children: GetChildrenFn
+    }
+
+    private static let hid: HIDFunctions? = {
+        func symbol<T>(_ name: String, _ path: String) -> T? {
+            guard let handle = dlopen(path, RTLD_NOW | RTLD_LOCAL), let pointer = dlsym(handle, name) else { return nil }
+            return unsafeBitCast(pointer, to: T.self)
+        }
+        let skyLight = "/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight"
+        let ioKit = "/System/Library/Frameworks/IOKit.framework/IOKit"
+        guard let copy: CopyHIDFn = symbol("SLEventCopyIOHIDEvent", skyLight),
+              let set: SetHIDFn = symbol("SLEventSetIOHIDEvent", skyLight),
+              let type: GetTypeFn = symbol("IOHIDEventGetType", ioKit),
+              let getInt: GetIntFn = symbol("IOHIDEventGetIntegerValue", ioKit),
+              let setInt: SetIntFn = symbol("IOHIDEventSetIntegerValue", ioKit),
+              let getFloat: GetFloatFn = symbol("IOHIDEventGetFloatValue", ioKit),
+              let setFloat: SetFloatFn = symbol("IOHIDEventSetFloatValue", ioKit),
+              let children: GetChildrenFn = symbol("IOHIDEventGetChildren", ioKit) else { return nil }
+        return HIDFunctions(copy: copy, set: set, type: type, getInt: getInt, setInt: setInt,
+                            getFloat: getFloat, setFloat: setFloat, children: children)
+    }()
+
+    // IOHID 필드 번호 = (종류 << 16) | 순번. DockSwipe(23): 1 축, 2 진행. Velocity(9): 0 X, 1 Y
+    private static let hidDockSwipe: UInt32 = 23
+    private static let hidVelocity: UInt32 = 9
+    private static func hidField(_ type: UInt32, _ index: UInt32) -> UInt32 { type << 16 | index }
+
+    /// 이벤트에 붙은 IOHID 원본의 축·진행(과 끝 속도)을 회전시켜 다시 붙인다.
+    /// IOHID 원본은 좌우 부호가 CGEvent 필드와 반대(위아래는 같음)라서, CGEvent 기준으로 바꿔 회전한 뒤 되돌린다 (실측 2026-10-30)
+    private func rotateAttachedHIDEvent(of event: CGEvent, transform cgTransform: (Double, Double) -> (h: Double, v: Double)) {
+        func transform(_ hidH: Double, _ hidV: Double) -> (h: Double, v: Double) {
+            let r = cgTransform(-hidH, hidV)
+            return (-r.h, r.v)
+        }
+        guard let fn = Self.hid, let hidEvent = fn.copy(event)?.takeRetainedValue(),
+              fn.type(hidEvent) == Self.hidDockSwipe else { return }
+
+        let motionField = Self.hidField(Self.hidDockSwipe, 1)
+        let progressField = Self.hidField(Self.hidDockSwipe, 2)
+        let motion = fn.getInt(hidEvent, motionField)
+        let progress = fn.getFloat(hidEvent, progressField)
+        guard motion == 1 || motion == 2 else { return }
+
+        let r = transform(motion == 1 ? progress : 0, motion == 2 ? progress : 0)
+        let newMotion = rotationSwapsAxes ? (motion == 1 ? 2 : 1) : motion
+        fn.setInt(hidEvent, motionField, newMotion)
+        fn.setFloat(hidEvent, progressField, newMotion == 1 ? r.h : r.v)
+
+        // 끝날 때 붙는 속도(자식 이벤트)도 같은 방향으로
+        if let children = fn.children(hidEvent)?.takeUnretainedValue() as? [CFTypeRef] {
+            for child in children where fn.type(child) == Self.hidVelocity {
+                let xField = Self.hidField(Self.hidVelocity, 0), yField = Self.hidField(Self.hidVelocity, 1)
+                let vx = fn.getFloat(child, xField), vy = fn.getFloat(child, yField)
+                let rv = transform(vx, vy)
+                fn.setFloat(child, xField, rv.h)
+                fn.setFloat(child, yField, rv.v)
+            }
+        }
+        fn.set(event, hidEvent)
+    }
+
     private func rotate(_ x: Double, _ y: Double) -> (Double, Double) {
         switch rotation {
         case .standard: return (x, y)
