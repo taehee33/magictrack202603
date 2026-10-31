@@ -426,6 +426,16 @@
         }
       }
     },
+    "다크": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
+          }
+        }
+      }
+    },
     "단단하게": {
       "localizations": {
         "en": {
@@ -502,6 +512,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Design"
+          }
+        }
+      }
+    },
+    "라이트": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
           }
         }
       }
@@ -1002,6 +1022,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open System Settings"
+          }
+        }
+      }
+    },
+    "시스템 설정에 맞춤": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Match System"
           }
         }
       }
@@ -1912,6 +1942,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save Current Settings as Preset"
+          }
+        }
+      }
+    },
+    "화면 모드": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
           }
         }
       }

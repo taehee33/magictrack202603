@@ -21,6 +21,7 @@ struct SettingsView: View {
     @ObservedObject private var permissions = PermissionManager.shared
     @State private var showResetPermissionConfirm = false
     @AppStorage(UpdateChecker.autoCheckKey) private var autoCheckUpdates = true
+    @AppStorage(AppTheme.key) private var theme = AppTheme.system.rawValue
 
     @State private var loginItemStatus = SMAppService.mainApp.status
     @State private var loginItemError: String?
@@ -72,6 +73,17 @@ struct SettingsView: View {
                 Text(visibilityDescription)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+            }
+
+            Section("화면 모드") {
+                Picker("화면 모드", selection: $theme) {
+                    ForEach(AppTheme.allCases) { option in
+                        Text(option.title).tag(option.rawValue)
+                    }
+                }
+                .onChange(of: theme) { _, newValue in
+                    (AppTheme(rawValue: newValue) ?? .system).apply()
+                }
             }
 
             Section("언어") {

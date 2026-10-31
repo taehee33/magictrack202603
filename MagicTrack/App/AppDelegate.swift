@@ -4,6 +4,7 @@ import Carbon.HIToolbox
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        AppTheme.selected.apply()
         AppVisibilityManager.shared.applyCurrentDockPreference()
 
         // 트랙패드 모니터링 시작
@@ -262,6 +263,39 @@ extension Notification.Name {
 // MARK: - AppLanguage
 // 앱 화면 언어 (한국어 / English). 기본은 시스템 언어와 상관없이 한국어.
 // macOS의 앱별 언어 설정(AppleLanguages, 시스템 설정 › 일반 › 언어 및 지역 › 앱)과 같은 값을 쓴다. 바꾸면 다시 시작해야 적용된다
+
+// MARK: - AppTheme
+// 화면 모드: 시스템 설정에 맞춤(기본) / 라이트 / 다크. 앱 전체(메인 창·메뉴바 팝오버)에 바로 적용된다
+
+enum AppTheme: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    static let key = "app_theme"
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringResource {
+        switch self {
+        case .system: return "시스템 설정에 맞춤"
+        case .light: return "라이트"
+        case .dark: return "다크"
+        }
+    }
+
+    static var selected: AppTheme {
+        UserDefaults.standard.string(forKey: key).flatMap(AppTheme.init(rawValue:)) ?? .system
+    }
+
+    func apply() {
+        switch self {
+        case .system: NSApp.appearance = nil
+        case .light: NSApp.appearance = NSAppearance(named: .aqua)
+        case .dark: NSApp.appearance = NSAppearance(named: .darkAqua)
+        }
+    }
+}
 
 enum AppLanguage: String, CaseIterable, Identifiable {
     case korean = "ko"
