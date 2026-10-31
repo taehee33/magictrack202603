@@ -2,6 +2,7 @@ import Foundation
 import AppKit
 import ApplicationServices
 import IOKit.hid
+import QuartzCore
 
 // MARK: - RotationEngine
 // 매직 트랙패드의 포인터 이동·드래그·스크롤을 회전시킨다 (시제품: 실측/rotate, 기록: 03·04 문서).
@@ -40,6 +41,7 @@ final class RotationEngine: ObservableObject {
     private var lastMagicScrollTime: CFAbsoluteTime = 0
     private static let senderField = CGEventField(rawValue: 87)!
     private static let moveTypes: Set<CGEventType> = [.mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged]
+    private static let clickTypes: Set<CGEventType> = [.leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp, .otherMouseDown, .otherMouseUp]
 
     private init() {}
 
@@ -121,7 +123,7 @@ final class RotationEngine: ObservableObject {
         guard tap == nil else { return }
         scrollProbe = UserDefaults.standard.bool(forKey: Self.scrollProbeKey)
         var mask: CGEventMask = 1 << CGEventType.scrollWheel.rawValue
-        for t in Self.moveTypes { mask |= 1 << t.rawValue }
+        for t in Self.moveTypes.union(Self.clickTypes) { mask |= 1 << t.rawValue }
         if scrollProbe { for t in Self.probeGestureTypes { mask |= CGEventMask(1) << t } }
         mask |= CGEventMask(1) << Self.gestureType
         let callback: CGEventTapCallBack = { _, type, event, userInfo in
@@ -146,6 +148,10 @@ final class RotationEngine: ObservableObject {
         self.tapSource = source
         idleTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in self?.idleCheck() }
         isRunning = true
+        TouchSourceMonitor.shared.onMagicFrame = { [weak self] dx, dy, fingers, time in
+            let arrival = CFAbsoluteTimeGetCurrent()
+            DispatchQueue.main.async { self?.magicFrame(dx: dx, dy: dy, fingers: fingers, time: time, arrival: arrival) }
+        }
         startSwipeTap()
         print("🔄 회전 시작: \(rotation.displayName)")
     }
@@ -182,7 +188,10 @@ final class RotationEngine: ObservableObject {
         idleTimer?.invalidate()
         idleTimer = nil
         if detached { setDetached(false) }
-        lastTarget = nil
+        TouchSourceMonitor.shared.onMagicFrame = nil
+        pointerActive = false
+        renderLink?.invalidate()
+        renderLink = nil
         if let tap { CGEvent.tapEnable(tap: tap, enable: false) }
         if let tapSource { CFRunLoopRemoveSource(CFRunLoopGetMain(), tapSource, .commonModes) }
         tap = nil
@@ -220,45 +229,29 @@ final class RotationEngine: ObservableObject {
                 return Unmanaged.passUnretained(event)
             }
             guard dx != 0 || dy != 0 else { return Unmanaged.passUnretained(event) }
-            let now = CFAbsoluteTimeGetCurrent()
-            let fresh = lastTarget == nil || now - lastTargetTime > 0.3
-            if fresh { direction = nil; fingerAccum = (0, 0) }
-            // 커서를 옮긴 뒤엔 macOS의 delta가 옮긴 위치 기준으로 다시 계산돼 방향이 틀어진다(되먹임으로 빙글빙글 돎).
-            // 그래서 방향은 손가락의 실제 이동(원시 터치)에서, 거리만 macOS delta(속도·가속 유지)에서 가져온다.
-            // 거리도 macOS delta는 같은 이유로 들쭉날쭉해서, 손가락 이동(mm)과 속도로 직접 계산한다
-            var finger = TouchSourceMonitor.shared.consumeMagicMotion()
-            // 새 움직임을 시작할 때는 그 전(스크롤 등)에 쌓인 이동량을 버리고, 한 이벤트의 이동은 8mm로 제한 (순간이동 방지)
-            if fresh { finger = (0, 0) }
-            let rawTravel = hypot(finger.x, finger.y)
-            if rawTravel > 8 { finger = (finger.x / rawTravel * 8, finger.y / rawTravel * 8) }
-            let dt = fresh ? 1.0 / 90 : min(max(now - lastTargetTime, 1.0 / 240), 1.0 / 30)
-            // 터치 프레임과 커서 이벤트의 박자가 달라 이벤트별 이동량이 0과 2배를 오가며 떨린다.
-            // 최근 약 25ms 동안의 이동량으로 속도를 구해 박자 차이만 고르게 펴고, 지연은 최소로 한다
-            if fresh { recentTravel.removeAll() }
-            recentTravel.append((now, hypot(finger.x, finger.y)))
-            recentTravel.removeAll { now - $0.time > 0.025 }
-            let window = max(now - (recentTravel.first?.time ?? now) + dt, dt)
-            let velocity = recentTravel.reduce(0) { $0 + $1.travel } / window
-            let speed = velocity * dt * pointerGain(mmPerSecond: velocity)
-            let mx: Double, my: Double
-            if let dir = updateDirection(finger: finger) {
-                (mx, my) = (dir.x * speed, dir.y * speed)
+            // 커서는 손가락 센서 프레임마다 직접 옮긴다(magicFrame). macOS는 천천히 움직일 때 이동 이벤트를
+            // 띄엄띄엄(실측 0.7초 공백) 보내서, 이벤트에 맞춰 옮기면 멈췄다 한꺼번에 가며 떨린다.
+            // 이벤트는 '한 손가락 포인터 이동이 시작됐다'는 신호로 쓰고, 위치와 이동량만 회전된 커서에 맞춰 고친다
+            if !pointerActive {
+                // 손가락이 닿을 때 이미 분리해 뒀으면 커서는 그대로 있다. 아니면 macOS가 회전 안 된 방향으로 옮긴 만큼 되돌린다
+                activatePointer(at: detached ? cursor : CGPoint(x: event.location.x - dx, y: event.location.y - dy))
+                CGWarpMouseCursorPosition(cursor)
             } else {
-                (mx, my) = (0, 0) // 방향을 알기 전엔 멈춰 둔다
+                renderPointer()
             }
-            // event.location은 HID가 커서를 둔 곳 — 움직임을 새로 시작할 때만 기준으로 쓰고, 이후엔 직전 목표에서 이어간다
-            let base = fresh ? CGPoint(x: event.location.x - dx, y: event.location.y - dy) : lastTarget!
-            let target = clampToScreens(CGPoint(x: base.x + mx, y: base.y + my))
-            lastTarget = target
-            lastTargetTime = now
-            // macOS가 수시로 분리를 풀기 때문에 매직 이벤트마다 다시 분리한다 (참고: lazycatlabs/trackpad_rotator)
-            setDetached(true)
-            CGWarpMouseCursorPosition(target)
-            event.location = target
-            event.setDoubleValueField(.mouseEventDeltaX, value: mx)
-            event.setDoubleValueField(.mouseEventDeltaY, value: my)
-            cursor = target
+            setDetached(true) // macOS가 수시로 분리를 풀기 때문에 매직 이벤트마다 다시 분리한다 (참고: lazycatlabs/trackpad_rotator)
+            event.location = cursor
+            event.setDoubleValueField(.mouseEventDeltaX, value: pendingDelta.x)
+            event.setDoubleValueField(.mouseEventDeltaY, value: pendingDelta.y)
+            pendingDelta = (0, 0)
             rotatedEventCount += 1
+            return Unmanaged.passUnretained(event)
+        }
+
+        if Self.clickTypes.contains(type), fromMagic {
+            // 누르고 뗄 때 손가락 중심이 살짝 밀리는데, macOS처럼 그동안은 커서를 멈춰 둔다
+            clickFreezeUntil = CFAbsoluteTimeGetCurrent() + 0.12
+            if pointerActive { event.location = cursor }
             return Unmanaged.passUnretained(event)
         }
 
@@ -274,6 +267,7 @@ final class RotationEngine: ObservableObject {
                 return Unmanaged.passUnretained(event)
             }
             lastMagicScrollTime = now
+            deactivatePointer()
             if scrollProbe { logProbe("scroll", event, sender: sender, fromMagic: fromMagic) }
             rotateScrollInPlace(event)
             if scrollProbe { logProbe("scroll→", event, sender: sender, fromMagic: fromMagic) }
@@ -286,14 +280,152 @@ final class RotationEngine: ObservableObject {
     // MARK: - 커서 분리 (매직을 쓰는 동안만)
 
     private var detached = false
-    private var lastTarget: CGPoint?
-    private var lastTargetTime: CFAbsoluteTime = 0
+    /// 한 손가락 포인터 이동 중인지. macOS의 이동 이벤트로 켜고, 손가락 수가 바뀌거나 떼거나 스크롤하면 끈다
+    private var pointerActive = false
+    private var pointerFingers = 0
+    private var clickFreezeUntil: CFAbsoluteTime = 0
+    /// 직전 이동 이벤트 이후 프레임으로 옮긴 양 (이벤트의 이동량으로 넘긴다)
+    private var pendingDelta = (x: 0.0, y: 0.0)
     private var idleTimer: Timer?
 
     /// 매직 트랙패드 이동 속도 (시스템 설정 칸 1~10)
     private var trackingSpeed = 7.0
-    /// 최근 손가락 이동량 (속도 계산용)
-    private var recentTravel: [(time: CFAbsoluteTime, travel: Double)] = []
+    // 센서 프레임은 약 66Hz라 화면(최대 120Hz)보다 느리고, 가끔 두 개씩 붙어서 도착한다.
+    // 그래서 ① 센서가 찍은 시각으로 계산하고 ② 아주 느릴 때의 센서 떨림만 거른 뒤(One Euro 필터)
+    // ③ 회전·가속한 위치를 프레임 사이에서 이어 120Hz로 커서를 그린다 (한 프레임쯤 늦게 따라가는 대신 고르게 움직임)
+    private struct PointerFrame { var time: Double; var x: Double; var y: Double }
+    private var pointerFrames: [PointerFrame] = []
+    /// 회전·가속을 거친 누적 이동 (pt)
+    private var pointerOutput = (x: 0.0, y: 0.0)
+    /// 커서에 이미 반영한 누적 이동 (pt)
+    private var pointerRendered = (x: 0.0, y: 0.0)
+    /// 손가락 위치 필터 상태 (mm, 패드 기준)
+    private var fingerRaw = (x: 0.0, y: 0.0)
+    private var fingerFiltered = (x: 0.0, y: 0.0)
+    private var fingerVelocity = (x: 0.0, y: 0.0)
+    private var lastSensorTime: Double?
+    /// 도착 시각 − 센서 시각 중 가장 작은 값 (센서 시각을 지금 시각으로 바꾸는 데 씀)
+    private var sensorClockOffset: Double?
+    /// 화면 갱신마다 커서를 그린다. ProMotion 화면은 주사율이 24~120Hz로 바뀌므로 고정 타이머 대신 화면에 맞추고, 움직이는 동안 120Hz를 요청한다
+    private var renderLink: CADisplayLink?
+    private lazy var renderProxy = DisplayLinkProxy { [weak self] in self?.renderPointer() }
+    /// 프레임 사이를 잇기 위해 이만큼 늦게 그린다 (센서 프레임 간격 약 15ms)
+    private static let renderDelay = 0.012
+    /// 멈춰 있을 때 거르는 정도(Hz, 낮을수록 강하게)와 빨라질수록 덜 거르는 정도(mm/s당 Hz)
+    private static let filterMinCutoff = 3.0, filterBeta = 0.3, filterVelocityCutoff = 15.0
+
+    private func activatePointer(at point: CGPoint) {
+        pointerActive = true
+        pointerFingers = TouchSourceMonitor.shared.magicFingerCount
+        cursor = point
+        pendingDelta = (0, 0)
+        pointerFrames.removeAll()
+        pointerOutput = (0, 0)
+        pointerRendered = (0, 0)
+        fingerRaw = (0, 0)
+        fingerFiltered = (0, 0)
+        fingerVelocity = (0, 0)
+        lastSensorTime = nil
+        if renderLink == nil {
+            let screen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main
+            if let link = screen?.displayLink(target: renderProxy, selector: #selector(DisplayLinkProxy.tick)) {
+                link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
+                link.add(to: .main, forMode: .common)
+                renderLink = link
+            }
+        }
+    }
+
+    /// 손가락을 떼거나 다른 동작으로 넘어가면 남은 이동을 마저 반영하고 멈춘다
+    private func deactivatePointer() {
+        guard pointerActive else { return }
+        moveCursor(by: (pointerOutput.x - pointerRendered.x, pointerOutput.y - pointerRendered.y))
+        pointerRendered = pointerOutput
+        pointerActive = false
+        renderLink?.invalidate()
+        renderLink = nil
+    }
+
+    private func magicFrame(dx: Double, dy: Double, fingers: Int, time: Double, arrival: CFAbsoluteTime) {
+        guard isRunning else { return }
+        if !pointerActive {
+            // 손가락이 닿자마자 분리해 둔다. macOS의 첫 이동 이벤트 때 분리하면 그 전에 커서가 회전 안 된 방향으로 한 번 튄다
+            if fingers > 0, !detached, let location = CGEvent(source: nil)?.location {
+                cursor = location
+                setDetached(true)
+            }
+            return
+        }
+        guard fingers > 0, fingers == pointerFingers else { deactivatePointer(); return }
+        let offset = arrival - time
+        // 시계가 조금씩 어긋나는 것도 따라가도록 최솟값을 아주 천천히 늘린다
+        sensorClockOffset = min(offset, (sensorClockOffset ?? offset) + 0.0005)
+
+        // 한 프레임의 이동은 8mm로 제한 (순간이동 방지)
+        let travel = hypot(dx, dy)
+        let scale = travel > 8 ? 8 / travel : 1
+        fingerRaw.x += dx * scale
+        fingerRaw.y += dy * scale
+        guard let last = lastSensorTime else {
+            lastSensorTime = time
+            fingerFiltered = fingerRaw
+            pointerFrames.append(PointerFrame(time: time, x: 0, y: 0))
+            return
+        }
+        let dt = min(max(time - last, 1.0 / 240), 0.05)
+        lastSensorTime = max(time, last)
+
+        // One Euro 필터: 속도가 느릴수록 강하게, 빠를수록 약하게 거른다
+        func alpha(_ cutoff: Double) -> Double { 1 / (1 + 1 / (2 * .pi * cutoff * dt)) }
+        let previous = fingerFiltered
+        let av = alpha(Self.filterVelocityCutoff)
+        fingerVelocity.x += av * ((fingerRaw.x - previous.x) / dt - fingerVelocity.x)
+        fingerVelocity.y += av * ((fingerRaw.y - previous.y) / dt - fingerVelocity.y)
+        let speed = hypot(fingerVelocity.x, fingerVelocity.y) // mm/s
+        let ap = alpha(Self.filterMinCutoff + Self.filterBeta * speed)
+        fingerFiltered.x += ap * (fingerRaw.x - previous.x)
+        fingerFiltered.y += ap * (fingerRaw.y - previous.y)
+
+        // 누르고 뗄 때 손가락 중심이 살짝 밀리는데, macOS처럼 그동안은 커서를 멈춰 둔다
+        if CFAbsoluteTimeGetCurrent() >= clickFreezeUntil {
+            let gain = pointerGain(mmPerSecond: speed)
+            let (rx, ry) = rotate(fingerFiltered.x - previous.x, fingerFiltered.y - previous.y)
+            pointerOutput.x += rx * gain
+            pointerOutput.y += ry * gain
+        }
+        pointerFrames.append(PointerFrame(time: lastSensorTime!, x: pointerOutput.x, y: pointerOutput.y))
+        if pointerFrames.count > 12 { pointerFrames.removeFirst(pointerFrames.count - 12) }
+    }
+
+    /// 지금 그릴 위치(한 프레임쯤 전)를 앞뒤 프레임 사이에서 이어 구해 커서를 옮긴다
+    private func renderPointer() {
+        guard pointerActive, let offset = sensorClockOffset, let lastFrame = pointerFrames.last else { return }
+        let t = CFAbsoluteTimeGetCurrent() - offset - Self.renderDelay
+        var position = (x: lastFrame.x, y: lastFrame.y)
+        if let next = pointerFrames.firstIndex(where: { $0.time > t }) {
+            if next == 0 {
+                position = (pointerFrames[0].x, pointerFrames[0].y)
+            } else {
+                let a = pointerFrames[next - 1], b = pointerFrames[next]
+                let f = b.time > a.time ? (t - a.time) / (b.time - a.time) : 1
+                position = (a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f)
+            }
+        }
+        let delta = (position.x - pointerRendered.x, position.y - pointerRendered.y)
+        guard delta.0 != 0 || delta.1 != 0 else { return }
+        pointerRendered = position
+        moveCursor(by: delta)
+    }
+
+    private func moveCursor(by delta: (Double, Double)) {
+        guard delta.0 != 0 || delta.1 != 0 else { return }
+        let target = clampToScreens(CGPoint(x: cursor.x + delta.0, y: cursor.y + delta.1))
+        pendingDelta.x += target.x - cursor.x
+        pendingDelta.y += target.y - cursor.y
+        cursor = target
+        setDetached(true)
+        CGWarpMouseCursorPosition(target)
+    }
 
     /// 손가락 1mm가 몇 포인트가 될지. macOS 실측 곡선(실측/rotate/calibration.txt, 속도 설정 5 기준):
     /// 10mm/s ≈ 4.5pt, 100mm/s ≈ 20pt, 250mm/s 이상 ≈ 50pt → 대략 4 + 0.17·v, 50에서 멈춤.
@@ -304,27 +436,6 @@ final class RotationEngine: ObservableObject {
         return measured * scale
     }
 
-    /// 손가락 이동 방향(회전 적용, 단위벡터). 잡음을 줄이려고 일정 거리 이상 쌓인 뒤 갱신하고 이전 방향과 섞는다
-    private var direction: (x: Double, y: Double)?
-    private var fingerAccum = (x: 0.0, y: 0.0)
-
-    private func updateDirection(finger: (x: Double, y: Double)) -> (x: Double, y: Double)? {
-        fingerAccum.x += finger.x
-        fingerAccum.y += finger.y
-        let length = hypot(fingerAccum.x, fingerAccum.y)
-        guard length >= (direction == nil ? 0.15 : 0.3) else { return direction } // mm
-        let (rx, ry) = rotate(fingerAccum.x / length, fingerAccum.y / length)
-        fingerAccum = (0, 0)
-        guard let old = direction else {
-            direction = (rx, ry)
-            return direction
-        }
-        let bx = old.x * 0.4 + rx * 0.6, by = old.y * 0.4 + ry * 0.6
-        let m = hypot(bx, by)
-        direction = m > 1e-6 ? (bx / m, by / m) : (rx, ry)
-        return direction
-    }
-
     private func setDetached(_ value: Bool) {
         CGAssociateMouseAndMouseCursorPosition(value ? 0 : 1)
         detached = value
@@ -332,7 +443,7 @@ final class RotationEngine: ObservableObject {
 
     /// 다른 장치가 움직이면 커서를 하드웨어에 돌려준다. 분리된 동안엔 시스템이 안 움직였으므로 이 이동은 직접 반영
     private func handBack(_ event: CGEvent, dx: Double, dy: Double) {
-        lastTarget = nil
+        deactivatePointer()
         cursor = event.location
         guard detached else { return }
         let target = clampToScreens(CGPoint(x: event.location.x + dx, y: event.location.y + dy))
@@ -345,7 +456,7 @@ final class RotationEngine: ObservableObject {
     /// 매직에서 손을 떼면 다시 연결
     private func idleCheck() {
         guard detached, !TouchSourceMonitor.shared.isTouching(builtIn: false) else { return }
-        lastTarget = nil
+        deactivatePointer()
         setDetached(false)
     }
 
@@ -657,4 +768,11 @@ final class RotationEngine: ObservableObject {
         guard let nearest = frames.min(by: { hypot($0.midX - p.x, $0.midY - p.y) < hypot($1.midX - p.x, $1.midY - p.y) }) else { return p }
         return CGPoint(x: min(max(p.x, nearest.minX), nearest.maxX - 1), y: min(max(p.y, nearest.minY), nearest.maxY - 1))
     }
+}
+
+/// CADisplayLink가 Objective-C 대상을 요구해서 두는 작은 중계 객체
+private final class DisplayLinkProxy: NSObject {
+    private let action: () -> Void
+    init(_ action: @escaping () -> Void) { self.action = action }
+    @objc func tick() { action() }
 }

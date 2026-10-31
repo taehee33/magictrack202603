@@ -12,6 +12,9 @@ final class TouchSourceMonitor {
 
     /// 새 터치가 시작됐을 때 (손가락 0 → 1개 이상). 메인 큐에서 호출. 인자: 내장 트랙패드 여부
     var onTouchBegan: ((_ isBuiltIn: Bool) -> Void)?
+    /// 매직 트랙패드의 센서 프레임마다 (MultitouchSupport 스레드에서 호출).
+    /// 인자: 손가락 중심 이동(mm, 패드 기준 x→오른쪽, y→아래), 닿은 손가락 수, 센서 시각(초. 차이만 의미 있음)
+    var onMagicFrame: ((_ dx: Double, _ dy: Double, _ fingers: Int, _ time: Double) -> Void)?
     private(set) var isAvailable = false
     private(set) var deviceCount = 0
 
@@ -37,7 +40,6 @@ final class TouchSourceMonitor {
     private var fingerCounts: [MTDeviceRef: Int32] = [:]
     private var lastCentroid: [MTDeviceRef: (x: Double, y: Double, count: Int)] = [:]
     private var sensorSizeMM: [MTDeviceRef: (width: Double, height: Double)] = [:]
-    private var magicMotion = (x: 0.0, y: 0.0)
     private var notifyPort: IONotificationPortRef?
     /// 매직 트랙패드 표면을 180° 뒤집을지. 드라이버가 포인터·스크롤·제스처를 모두 뒤집는다 (실측: 0°/180°만 지원)
     private var magicFlipped = false
@@ -95,12 +97,10 @@ final class TouchSourceMonitor {
         stopDevices()
     }
 
-    /// 직전 호출 이후 매직 트랙패드 위 손가락 중심이 움직인 양 (mm, 패드 기준 x→오른쪽, y→아래). 읽으면 0으로 초기화
-    func consumeMagicMotion() -> (x: Double, y: Double) {
+    /// 지금 매직 트랙패드에 닿아 있는 손가락 수
+    var magicFingerCount: Int {
         lock.lock(); defer { lock.unlock() }
-        let m = magicMotion
-        magicMotion = (0, 0)
-        return m
+        return lastCentroid.filter { !builtInDevices.contains($0.key) }.map(\.value.count).max() ?? 0
     }
 
     /// MultitouchSupport가 넘기는 손가락 배열(항목당 96바이트)에서 표면에 닿은 손가락의 정규화 좌표 중심을 구한다.
@@ -221,31 +221,34 @@ final class TouchSourceMonitor {
 
     // MARK: - 접촉 콜백 (MultitouchSupport 스레드)
 
-    private static let contactCallback: ContactCallback = { device, fingers, count, _, _ in
+    private static let contactCallback: ContactCallback = { device, fingers, count, timestamp, _ in
         guard let device else { return 0 }
-        shared.handleFrame(device: device, count: count, fingers: fingers)
+        shared.handleFrame(device: device, count: count, fingers: fingers, timestamp: timestamp)
         return 0
     }
 
-    private func handleFrame(device: MTDeviceRef, count: Int32, fingers: UnsafeMutableRawPointer?) {
+    private func handleFrame(device: MTDeviceRef, count: Int32, fingers: UnsafeMutableRawPointer?, timestamp: Double) {
         let centroid = Self.touchingCentroid(fingers, count: Int(count))
         lock.lock()
         let previous = fingerCounts[device] ?? 0
         fingerCounts[device] = count
         let builtIn = builtInDevices.contains(device)
+        var frameMotion = (x: 0.0, y: 0.0)
         if !builtIn {
             // 외장(매직) 패드의 손가락 중심 이동량을 mm로 누적. 손가락 수가 바뀐 프레임은 중심이 튀므로 건너뜀
             if let centroid, let last = lastCentroid[device], last.count == centroid.count {
                 let size = sensorSizeMM[device] ?? (160, 115)
-                magicMotion.x += (centroid.x - last.x) * size.width
-                magicMotion.y -= (centroid.y - last.y) * size.height // 패드 y는 아래→위, 화면 y는 위→아래
+                frameMotion = ((centroid.x - last.x) * size.width, -(centroid.y - last.y) * size.height) // 패드 y는 아래→위, 화면 y는 위→아래
             }
             lastCentroid[device] = centroid
         }
+        let onMagicFrame = builtIn ? nil : self.onMagicFrame
         lock.unlock()
+        onMagicFrame?(frameMotion.x, frameMotion.y, centroid?.count ?? 0, timestamp)
         guard previous == 0, count > 0 else { return }
         DispatchQueue.main.async { [weak self] in
             self?.onTouchBegan?(builtIn)
         }
     }
 }
+
