@@ -146,7 +146,7 @@ EN = {
     "트랙패드를 선택하면 감도 설정이 적용됩니다.": "Choosing a trackpad applies its sensitivity settings.",
     "편집 · 복제 · 삭제": "Edit · Duplicate · Delete",
     "편집…": "Edit…",
-    "포인터·스크롤·드래그와 세·네 손가락 쓸어넘기기가 회전돼요 (두 손가락 페이지 넘기기는 제외, 손쉬운 사용 권한 사용)": "Pointer, scrolling, dragging, and three- or four-finger swipes are rotated (not two-finger page swipes; uses Accessibility permission)",
+    "포인터·스크롤·드래그와 두 손가락 페이지 넘기기, 세·네 손가락 쓸어넘기기가 회전돼요 (손쉬운 사용 권한 사용)": "Pointer, scrolling, dragging, two-finger page swipes, and three- or four-finger swipes are rotated (uses Accessibility permission)",
     "포인터·스크롤·제스처가 모두 뒤집혀요": "Pointer, scrolling, and gestures are all flipped",
     "프리셋": "Presets",
     "프리셋 고르기": "Choose Preset",

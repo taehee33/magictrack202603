@@ -15,7 +15,7 @@ macOS applies one set of settings to every trackpad. MagicMagicTrack recognizes 
 - **Switch shortcut**: `⌃⌥M` by default cycles Auto → Built-in Only → Magic Only. Can be changed or turned off
 - **Magic Trackpad rotation**
   - 180°: pointer, scrolling, and gestures are all flipped (no permission needed)
-  - Left / Right 90°: pointer, click, drag, scrolling, and three- or four-finger swipes (switching desktops, Mission Control) are rotated (needs Accessibility permission)
+  - Left / Right 90°: pointer, click, drag, scrolling, two-finger page swipes (back / forward), and three- or four-finger swipes (switching desktops, Mission Control) are rotated (needs Accessibility permission)
 - **Reset to defaults**: per setting, choose "My Default" or "Mac Default" (Tracking 4 · Scrolling 4 · Click Medium)
 - **Presets**: edit, duplicate, delete; shows "Modified" when the current values differ from the preset
 - **App rules**: apply a preset automatically when you use a specific app
@@ -52,7 +52,6 @@ If you turn on 90° rotation without the permission, the Magic Trackpad card sho
 ## Known limitations
 
 - **Uses private macOS features** (MultitouchSupport, System Settings internals, private event fields, SkyLight). A macOS update may break some features. If automatic switching is unavailable, the app falls back to a fixed mode.
-- At 90°, **two-finger page swipes (back / forward) are not rotated.** Direction-independent gestures such as pinch work as usual.
 - While rotated 90°, the app moves the cursor itself when you use the Magic Trackpad.
 - Because it needs private features and runs outside the sandbox, it **cannot be published on the Mac App Store.**
 

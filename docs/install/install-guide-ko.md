@@ -99,7 +99,6 @@ xattr -dr com.apple.quarantine /Applications/MagicMagicTrack.app
 ## 6. 알려진 한계
 
 - macOS 비공개 기능을 씁니다. macOS 업데이트 후 일부 기능이 멈출 수 있습니다. 자동 전환을 쓸 수 없으면 고정 모드로 동작합니다.
-- 90° 회전에서 두 손가락 페이지 넘기기(뒤로·앞으로)는 회전되지 않습니다.
 - macOS 14 이상에서 설치할 수 있지만 테스트는 macOS 27에서만 했습니다.
 
 ## 7. 문제 해결 체크리스트

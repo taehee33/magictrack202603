@@ -99,7 +99,6 @@ Next to the menu bar icon, the trackpad in use and its rotation are shown as `Bu
 ## 6. Known limitations
 
 - The app uses private macOS features. A macOS update may break some features. If automatic switching is unavailable, the app falls back to a fixed mode.
-- At 90°, two-finger page swipes (back / forward) are not rotated.
 - It installs on macOS 14 or later, but has only been tested on macOS 27.
 
 ## 7. Troubleshooting checklist

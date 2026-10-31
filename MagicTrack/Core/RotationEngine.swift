@@ -6,10 +6,10 @@ import IOKit.hid
 // MARK: - RotationEngine
 // 매직 트랙패드의 포인터 이동·드래그·스크롤을 회전시킨다 (시제품: 실측/rotate, 기록: 03·04 문서).
 // - 180°: 멀티터치 드라이버의 표면 방향 설정(MTDeviceSetSurfaceOrientation)으로 처리 → 포인터·스크롤·제스처 모두, 권한 불필요
-// - 90°: 드라이버가 지원하지 않아 이벤트 탭으로 처리 (손쉬운 사용 권한 필요). 세·네 손가락 쓸어넘기기도 회전, 두 손가락 페이지 넘기기는 제외
+// - 90°: 드라이버가 지원하지 않아 이벤트 탭으로 처리 (손쉬운 사용 권한 필요). 두 손가락 페이지 넘기기, 세·네 손가락 쓸어넘기기도 회전
 // - 대상 판별: 이벤트 비공개 필드 87 = 보낸 HID 서비스 ID (0단계 실측). 스크롤 관성 이벤트는 0으로 오므로 직전 출처를 이어 씀
 // - 포인터: 원본 이벤트에 담긴 HID 데이터로 시스템이 커서를 다시 움직여 떨리므로, 원본을 버리고 회전된 새 이벤트를 보냄
-// - 스크롤: 원본 필드를 고치면 앱이 무시하므로 원본을 버리고 회전된 연속 스크롤 이벤트를 새로 보냄
+// - 스크롤: 원본 이벤트의 필드와 붙어 있는 IOHID 원본을 함께 회전해 원본 그대로 보냄 (새로 만들면 앱이 페이지 넘기기로 알아보지 못함)
 // - 이벤트 탭을 쓰므로 손쉬운 사용 권한 필요. 회전이 '기본'이 아닐 때만 켠다
 
 final class RotationEngine: ObservableObject {
@@ -119,8 +119,11 @@ final class RotationEngine: ObservableObject {
 
     private func startTapIfNeeded() {
         guard tap == nil else { return }
+        scrollProbe = UserDefaults.standard.bool(forKey: Self.scrollProbeKey)
         var mask: CGEventMask = 1 << CGEventType.scrollWheel.rawValue
         for t in Self.moveTypes { mask |= 1 << t.rawValue }
+        if scrollProbe { for t in Self.probeGestureTypes { mask |= CGEventMask(1) << t } }
+        mask |= CGEventMask(1) << Self.gestureType
         let callback: CGEventTapCallBack = { _, type, event, userInfo in
             guard let userInfo else { return Unmanaged.passUnretained(event) }
             return Unmanaged<RotationEngine>.fromOpaque(userInfo).takeUnretainedValue().handle(type: type, event: event)
@@ -149,7 +152,8 @@ final class RotationEngine: ObservableObject {
 
     private func startSwipeTap() {
         guard swipeTap == nil else { return }
-        let mask: CGEventMask = CGEventMask(1) << Self.dockControlType
+        var mask: CGEventMask = CGEventMask(1) << Self.dockControlType
+        if scrollProbe { for t in Self.probeGestureTypes { mask |= CGEventMask(1) << t } }
         let callback: CGEventTapCallBack = { _, type, event, userInfo in
             guard let userInfo else { return Unmanaged.passUnretained(event) }
             return Unmanaged<RotationEngine>.fromOpaque(userInfo).takeUnretainedValue().handleSwipe(type: type, event: event)
@@ -195,6 +199,19 @@ final class RotationEngine: ObservableObject {
         }
         let sender = UInt64(bitPattern: event.getIntegerValueField(Self.senderField))
         let fromMagic = magicServiceIDs.contains(sender)
+
+        if Self.probeGestureTypes.contains(type.rawValue) {
+            if scrollProbe { logProbe("hid\(type.rawValue)", event, sender: sender, fromMagic: fromMagic) }
+            if fromMagic, type.rawValue == Self.gestureType {
+                if event.getIntegerValueField(Self.field(Self.gestureSubtypeField)) == Self.gestureSubtypeScroll {
+                    rotateGestureScroll(event)
+                } else {
+                    rotateTouchesInPlace(event)
+                }
+                if scrollProbe { logProbe("hid\(type.rawValue)→", event, sender: sender, fromMagic: fromMagic) }
+            }
+            return Unmanaged.passUnretained(event)
+        }
 
         if Self.moveTypes.contains(type) {
             let dx = event.getDoubleValueField(.mouseEventDeltaX), dy = event.getDoubleValueField(.mouseEventDeltaY)
@@ -253,13 +270,15 @@ final class RotationEngine: ObservableObject {
             if sender != 0 { lastScrollFromMagic = fromMagic }
             let continuesMagic = sender == 0 && lastScrollFromMagic && now - lastMagicScrollTime < 0.2
             guard fromMagic || continuesMagic else {
+                if scrollProbe { logProbe("scroll-other", event, sender: sender, fromMagic: fromMagic) }
                 return Unmanaged.passUnretained(event)
             }
             lastMagicScrollTime = now
-            guard let rotated = rotatedScrollEvent(from: event) else { return Unmanaged.passUnretained(event) }
-            rotated.post(tap: .cgSessionEventTap)
+            if scrollProbe { logProbe("scroll", event, sender: sender, fromMagic: fromMagic) }
+            rotateScrollInPlace(event)
+            if scrollProbe { logProbe("scroll→", event, sender: sender, fromMagic: fromMagic) }
             rotatedEventCount += 1
-            return nil
+            return Unmanaged.passUnretained(event)
         }
         return Unmanaged.passUnretained(event)
     }
@@ -330,24 +349,152 @@ final class RotationEngine: ObservableObject {
         setDetached(false)
     }
 
-    private func rotatedScrollEvent(from event: CGEvent) -> CGEvent? {
-        let (ph, pv) = rotate(event.getDoubleValueField(.scrollWheelEventPointDeltaAxis2),
-                              event.getDoubleValueField(.scrollWheelEventPointDeltaAxis1))
-        guard let new = CGEvent(scrollWheelEvent2Source: nil, units: .pixel, wheelCount: 2,
-                                wheel1: Int32(pv), wheel2: Int32(ph), wheel3: 0) else { return nil }
-        let (fh, fv) = rotate(event.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis2),
-                              event.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1))
-        new.setDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1, value: fv)
-        new.setDoubleValueField(.scrollWheelEventFixedPtDeltaAxis2, value: fh)
-        new.setIntegerValueField(.scrollWheelEventPointDeltaAxis1, value: Int64(pv))
-        new.setIntegerValueField(.scrollWheelEventPointDeltaAxis2, value: Int64(ph))
-        for field in [CGEventField.scrollWheelEventIsContinuous, .scrollWheelEventScrollPhase,
-                      .scrollWheelEventMomentumPhase, .scrollWheelEventScrollCount] {
-            new.setIntegerValueField(field, value: event.getIntegerValueField(field))
+    // MARK: - 두 손가락 스크롤·페이지 넘기기
+    // 원본 스크롤을 버리고 새로 만들어 보내면 앱이 두 손가락 페이지 넘기기(뒤로·앞으로)로 알아보지 못한다.
+    // 그래서 원본 이벤트의 필드와 붙어 있는 IOHID 원본을 함께 회전해 원본 그대로 보낸다.
+    // 문제를 살펴볼 때: defaults write com.magictrack.app rotation_scroll_probe -bool true 로 /tmp에 기록을 남긴다
+
+    private static let scrollProbeKey = "rotation_scroll_probe"
+    /// 기록용: 제스처 계열 이벤트 종류 (18 회전, 19·20 제스처 시작·끝, 29 제스처, 31 쓸기, 32 스마트 확대)
+    private static let probeGestureTypes: Set<UInt32> = [18, 19, 20, 29, 31, 32]
+    private static let probeLogPath = "/tmp/mmt_scroll_probe.log"
+    private var scrollProbe = false
+    // IOHID Scroll(6): 0 X, 1 Y. 두 축 모두 CGEvent 필드와 부호가 반대라(실측 2026-10-31: 내장 x -14 ↔ 좌우 +1.3, 매직 y -36 ↔ 위아래 +2.6)
+    // 회전(선형)에 부호가 그대로 상쇄되므로 원본 값을 바로 회전하면 된다
+    private static let hidScroll: UInt32 = 6
+
+    // 비공개 필드 175·176(정규화된 이동), 177·178(장치 이동): IOHID 원본의 x·y와 같은 부호로 들어 있다 (실측 2026-10-31).
+    // 앱의 페이지 넘기기(쓸기 추적)는 이 장치 이동 값을 보는 것으로 보여서 함께 회전한다
+    private static let deviceDeltaFields: [(x: UInt32, y: UInt32)] = [(175, 176), (177, 178)]
+
+    private func rotateScrollInPlace(_ event: CGEvent) {
+        // CGEvent 필드: Axis1 = 위아래, Axis2 = 좌우
+        let line = rotate(Double(event.getIntegerValueField(.scrollWheelEventDeltaAxis2)),
+                          Double(event.getIntegerValueField(.scrollWheelEventDeltaAxis1)))
+        let point = rotate(event.getDoubleValueField(.scrollWheelEventPointDeltaAxis2),
+                           event.getDoubleValueField(.scrollWheelEventPointDeltaAxis1))
+        let cgH = event.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis2)
+        let cgV = event.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1)
+        let fixed = rotate(cgH, cgV)
+
+        // IOHID 원본을 먼저 붙인다 (붙이면 일부 필드가 원본 기준으로 다시 채워지므로 필드는 그 뒤에 쓴다)
+        if let fn = Self.hid, let hidEvent = fn.copy(event)?.takeRetainedValue(), fn.type(hidEvent) == Self.hidScroll {
+            let xField = Self.hidField(Self.hidScroll, 0), yField = Self.hidField(Self.hidScroll, 1)
+            func rotateHID(_ e: CFTypeRef) {
+                let (rh, rv) = rotate(fn.getFloat(e, xField), fn.getFloat(e, yField))
+                fn.setFloat(e, xField, rh)
+                fn.setFloat(e, yField, rv)
+            }
+            rotateHID(hidEvent)
+            // 자식 스크롤(가속 전 값으로 보임)도 같은 방향으로. 쓸기 추적이 이 값을 볼 수 있다
+            if let children = fn.children(hidEvent)?.takeUnretainedValue() as? [CFTypeRef] {
+                for child in children where fn.type(child) == Self.hidScroll { rotateHID(child) }
+            }
+            fn.set(event, hidEvent)
         }
-        new.location = cursor
-        new.flags = event.flags
-        return new
+
+        // 줄 단위 값을 쓰면 다른 값이 다시 계산되므로 줄 단위 → 점 → 고정소수점 순서로 쓴다
+        event.setIntegerValueField(.scrollWheelEventDeltaAxis2, value: Int64(line.0.rounded()))
+        event.setIntegerValueField(.scrollWheelEventDeltaAxis1, value: Int64(line.1.rounded()))
+        event.setIntegerValueField(.scrollWheelEventPointDeltaAxis2, value: Int64(point.0.rounded()))
+        event.setIntegerValueField(.scrollWheelEventPointDeltaAxis1, value: Int64(point.1.rounded()))
+        event.setDoubleValueField(.scrollWheelEventFixedPtDeltaAxis2, value: fixed.0)
+        event.setDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1, value: fixed.1)
+
+        // 장치 이동 값은 IOHID 원본과 같은 부호 (두 축 모두 반대라 그대로 회전)
+        for pair in Self.deviceDeltaFields {
+            let fx = Self.field(pair.x), fy = Self.field(pair.y)
+            let dx = event.getDoubleValueField(fx), dy = event.getDoubleValueField(fy)
+            guard dx != 0 || dy != 0 else { continue }
+            let (rx, ry) = rotate(dx, dy)
+            event.setDoubleValueField(fx, value: rx)
+            event.setDoubleValueField(fy, value: ry)
+        }
+    }
+
+    // 제스처 이벤트(종류 29)에는 손가락 위치가 담긴 IOHID Digitizer(11) 원본이 붙어 온다.
+    // Chrome은 두 손가락 페이지 넘기기를 이 손가락 위치로 따라가므로, 위치(0~1, x 오른쪽·y 아래쪽, 실측 2026-10-31)도 패드 가운데를 중심으로 회전한다
+    private static let gestureType: UInt32 = 29
+    private static let hidDigitizer: UInt32 = 11
+
+    private func rotateTouchesInPlace(_ event: CGEvent) {
+        guard let fn = Self.hid, let hidEvent = fn.copy(event)?.takeRetainedValue(),
+              fn.type(hidEvent) == Self.hidDigitizer else { return }
+        let xField = Self.hidField(Self.hidDigitizer, 0), yField = Self.hidField(Self.hidDigitizer, 1)
+        func rotatePosition(_ e: CFTypeRef) {
+            let (rx, ry) = rotate(fn.getFloat(e, xField) - 0.5, fn.getFloat(e, yField) - 0.5)
+            fn.setFloat(e, xField, rx + 0.5)
+            fn.setFloat(e, yField, ry + 0.5)
+        }
+        rotatePosition(hidEvent)
+        if let children = fn.children(hidEvent)?.takeUnretainedValue() as? [CFTypeRef] {
+            for child in children where fn.type(child) == Self.hidDigitizer { rotatePosition(child) }
+        }
+        fn.set(event, hidEvent)
+    }
+
+    // 제스처 이벤트 중 하위 종류(110) 6은 스크롤을 한 번 더 담아 온다 (실측 2026-10-31).
+    // Safari의 두 손가락 페이지 넘기기(AppKit 쓸기 추적)는 이 값을 보므로 스크롤 이벤트와 똑같이 회전한다.
+    // 필드: 113·114·118 = 좌우(Double), 116 = 좌우(정수), 115·117·164 = 좌우의 Float32 비트,
+    // 119·139 = 위아래(Double), 123·165 = 위아래의 Float32 비트. 두 값 모두 IOHID 원본과 부호가 반대(회전엔 상관없음)
+    private static let gestureSubtypeField: UInt32 = 110
+    private static let gestureSubtypeScroll: Int64 = 6
+
+    private func rotateGestureScroll(_ event: CGEvent) {
+        if let fn = Self.hid, let hidEvent = fn.copy(event)?.takeRetainedValue(), fn.type(hidEvent) == Self.hidScroll {
+            let xField = Self.hidField(Self.hidScroll, 0), yField = Self.hidField(Self.hidScroll, 1)
+            func rotateHID(_ e: CFTypeRef) {
+                let (rh, rv) = rotate(fn.getFloat(e, xField), fn.getFloat(e, yField))
+                fn.setFloat(e, xField, rh)
+                fn.setFloat(e, yField, rv)
+            }
+            rotateHID(hidEvent)
+            if let children = fn.children(hidEvent)?.takeUnretainedValue() as? [CFTypeRef] {
+                for child in children where fn.type(child) == Self.hidScroll { rotateHID(child) }
+            }
+            fn.set(event, hidEvent)
+        }
+        let (x, y) = rotate(event.getDoubleValueField(Self.field(113)), event.getDoubleValueField(Self.field(119)))
+        for i: UInt32 in [113, 114, 118] { event.setDoubleValueField(Self.field(i), value: x) }
+        event.setIntegerValueField(Self.field(116), value: Int64(x.rounded()))
+        for i: UInt32 in [115, 117, 164] { event.setIntegerValueField(Self.field(i), value: Int64(Float(x).bitPattern)) }
+        for i: UInt32 in [119, 139] { event.setDoubleValueField(Self.field(i), value: y) }
+        for i: UInt32 in [123, 165] { event.setIntegerValueField(Self.field(i), value: Int64(Float(y).bitPattern)) }
+    }
+
+    private func logProbe(_ label: String, _ event: CGEvent, sender: UInt64, fromMagic: Bool) {
+        var hidText = "없음"
+        if let fn = Self.hid, let hidEvent = fn.copy(event)?.takeRetainedValue() {
+            let t = fn.type(hidEvent)
+            hidText = "type=\(t) f0=\(fn.getFloat(hidEvent, Self.hidField(t, 0))) f1=\(fn.getFloat(hidEvent, Self.hidField(t, 1)))"
+            if let children = fn.children(hidEvent)?.takeUnretainedValue() as? [CFTypeRef], !children.isEmpty {
+                hidText += " children=\(children.map { fn.type($0) })"
+                for child in children where fn.type(child) == Self.hidScroll {
+                    hidText += " c6=(\(fn.getFloat(child, Self.hidField(6, 0))),\(fn.getFloat(child, Self.hidField(6, 1))))"
+                }
+            }
+        }
+        let cg = "h=\(event.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis2)) v=\(event.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1))"
+            + " phase=\(event.getIntegerValueField(.scrollWheelEventScrollPhase)) momentum=\(event.getIntegerValueField(.scrollWheelEventMomentumPhase))"
+        // 비공개 필드 중 0이 아닌 것 (내장/매직의 두 손가락 페이지 넘기기 비교용)
+        var fields: [String] = []
+        for i in UInt32(88)...UInt32(200) where i != 87 {
+            guard let f = CGEventField(rawValue: i) else { continue }
+            let v = event.getIntegerValueField(f)
+            let d = event.getDoubleValueField(f)
+            if v != 0 || d != 0 { fields.append(d != Double(v) ? "\(i)=\(v)/\(d)" : "\(i)=\(v)") }
+        }
+        let line = String(format: "%.3f %@ magic=%d sender=%llu cg[%@] hid[%@] f[%@]\n",
+                          CFAbsoluteTimeGetCurrent(), label, fromMagic ? 1 : 0, sender, cg, hidText, fields.joined(separator: " "))
+        // NSLog는 통합 로그에서 내용이 가려져서 파일로 남긴다
+        if let handle = FileHandle(forWritingAtPath: Self.probeLogPath) ?? {
+            FileManager.default.createFile(atPath: Self.probeLogPath, contents: nil)
+            return FileHandle(forWritingAtPath: Self.probeLogPath)
+        }() {
+            handle.seekToEndOfFile()
+            handle.write(line.data(using: .utf8)!)
+            try? handle.close()
+        }
     }
 
     /// 트랙패드가 시계 방향으로 놓인 각도만큼 입력을 되돌린다 (오른쪽 90°: 손가락 → 오른쪽이 패드 기준 위쪽으로 들어옴)
@@ -367,6 +514,10 @@ final class RotationEngine: ObservableObject {
             return Unmanaged.passUnretained(event)
         }
         let sender = UInt64(bitPattern: event.getIntegerValueField(Self.senderField))
+        if scrollProbe, type.rawValue != Self.dockControlType {
+            logProbe("session\(type.rawValue)", event, sender: sender, fromMagic: magicServiceIDs.contains(sender))
+            return Unmanaged.passUnretained(event)
+        }
         guard type.rawValue == Self.dockControlType, magicServiceIDs.contains(sender),
               event.getIntegerValueField(Self.field(110)) == 23 else {
             return Unmanaged.passUnretained(event)
