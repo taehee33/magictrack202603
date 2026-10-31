@@ -122,6 +122,7 @@ final class RotationEngine: ObservableObject {
     private func startTapIfNeeded() {
         guard tap == nil else { return }
         scrollProbe = UserDefaults.standard.bool(forKey: Self.scrollProbeKey)
+        pointerProbe = UserDefaults.standard.bool(forKey: Self.pointerProbeKey)
         var mask: CGEventMask = 1 << CGEventType.scrollWheel.rawValue
         for t in Self.moveTypes.union(Self.clickTypes) { mask |= 1 << t.rawValue }
         if scrollProbe { for t in Self.probeGestureTypes { mask |= CGEventMask(1) << t } }
@@ -232,12 +233,19 @@ final class RotationEngine: ObservableObject {
             // 커서는 손가락 센서 프레임마다 직접 옮긴다(magicFrame). macOS는 천천히 움직일 때 이동 이벤트를
             // 띄엄띄엄(실측 0.7초 공백) 보내서, 이벤트에 맞춰 옮기면 멈췄다 한꺼번에 가며 떨린다.
             // 이벤트는 '한 손가락 포인터 이동이 시작됐다'는 신호로 쓰고, 위치와 이동량만 회전된 커서에 맞춰 고친다
+            if pointerDraining { deactivatePointer() } // 손가락 수가 바뀐 뒤 새 이동이 시작됨: 남은 이동을 마치고 새로 시작
             if !pointerActive {
                 // 손가락이 닿을 때 이미 분리해 뒀으면 커서는 그대로 있다. 아니면 macOS가 회전 안 된 방향으로 옮긴 만큼 되돌린다
                 activatePointer(at: detached ? cursor : CGPoint(x: event.location.x - dx, y: event.location.y - dy))
                 CGWarpMouseCursorPosition(cursor)
-            } else {
+            } else if renderLink == nil {
+                // 화면 갱신에 맞춰 그리는 중이면 여기서 옮기지 않는다 (갱신 사이에 한 번 더 옮기면 간격이 들쭉날쭉해짐)
                 renderPointer()
+            } else {
+                // 분리가 풀려 macOS가 회전 안 된 방향으로 옮겼으면 다음 갱신까지 기다리지 않고 바로 되돌린다
+                let drift = hypot(event.location.x - cursor.x, event.location.y - cursor.y)
+                if pointerProbe { probeLine(String(format: "E drift=%.1f", drift)) }
+                if drift > 0.5 { CGWarpMouseCursorPosition(cursor) }
             }
             setDetached(true) // macOS가 수시로 분리를 풀기 때문에 매직 이벤트마다 다시 분리한다 (참고: lazycatlabs/trackpad_rotator)
             event.location = cursor
@@ -308,14 +316,28 @@ final class RotationEngine: ObservableObject {
     private var sensorClockOffset: Double?
     /// 화면 갱신마다 커서를 그린다. ProMotion 화면은 주사율이 24~120Hz로 바뀌므로 고정 타이머 대신 화면에 맞추고, 움직이는 동안 120Hz를 요청한다
     private var renderLink: CADisplayLink?
-    private lazy var renderProxy = DisplayLinkProxy { [weak self] in self?.renderPointer() }
-    /// 프레임 사이를 잇기 위해 이만큼 늦게 그린다 (센서 프레임 간격 약 15ms)
-    private static let renderDelay = 0.012
+    private var renderLinkScreen: NSNumber?
+    private lazy var renderProxy = DisplayLinkProxy { [weak self] vsyncTime in
+        self?.renderPointer(vsyncTime: vsyncTime)
+        if self?.pointerActive == true { self?.ensureRenderLink() }
+    }
+    /// 프레임 사이를 잇기 위해 이만큼 늦게 그린다. 다음 프레임이 오기 전에 그릴 시각이 마지막 프레임을 넘어가면
+    /// 커서가 멈췄다가 한꺼번에 따라가며 튀므로, 지연은 '프레임 간격 + 늦게 도착하는 정도'보다 길어야 한다.
+    /// 블루투스는 프레임을 두 개씩 붙여 보내기도 해서(약 15ms 늦음) 고정값 대신 실제 도착을 보고 맞춘다
+    private var renderDelay = 0.02
+    /// 센서 프레임 간격 (평균, 초)
+    private var frameInterval = 0.015
+    /// 최근 프레임이 가장 빨리 온 프레임보다 늦게 도착한 정도 (천천히 줄어드는 최댓값, 초)
+    private var frameLateness = 0.0
+    private static let renderDelayRange = 0.012...0.045
+    /// 손가락 수가 바뀌거나 떼면 새 프레임은 받지 않고 남은 이동을 마저 그린 뒤 멈춘다 (한꺼번에 옮기면 튐)
+    private var pointerDraining = false
     /// 멈춰 있을 때 거르는 정도(Hz, 낮을수록 강하게)와 빨라질수록 덜 거르는 정도(mm/s당 Hz)
     private static let filterMinCutoff = 3.0, filterBeta = 0.3, filterVelocityCutoff = 15.0
 
     private func activatePointer(at point: CGPoint) {
         pointerActive = true
+        pointerDraining = false
         pointerFingers = TouchSourceMonitor.shared.magicFingerCount
         cursor = point
         pendingDelta = (0, 0)
@@ -326,14 +348,23 @@ final class RotationEngine: ObservableObject {
         fingerFiltered = (0, 0)
         fingerVelocity = (0, 0)
         lastSensorTime = nil
-        if renderLink == nil {
-            let screen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main
-            if let link = screen?.displayLink(target: renderProxy, selector: #selector(DisplayLinkProxy.tick)) {
-                link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
-                link.add(to: .main, forMode: .common)
-                renderLink = link
-            }
-        }
+        ensureRenderLink()
+    }
+
+    /// 커서가 있는 화면의 갱신에 맞춘다. 다른 모니터로 넘어가면 그 화면 주사율로 다시 만든다 (60Hz 외부 모니터 ↔ 120Hz 내장 등)
+    private func ensureRenderLink() {
+        let screen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main
+        let number = screen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        guard renderLink == nil || number != renderLinkScreen else { return }
+        renderLink?.invalidate()
+        renderLink = nil
+        renderLinkScreen = number
+        guard let screen else { return }
+        let link = screen.displayLink(target: renderProxy, selector: #selector(DisplayLinkProxy.tick(_:)))
+        let fps = Float(max(screen.maximumFramesPerSecond, 60))
+        link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: fps, preferred: fps)
+        link.add(to: .main, forMode: .common)
+        renderLink = link
     }
 
     /// 손가락을 떼거나 다른 동작으로 넘어가면 남은 이동을 마저 반영하고 멈춘다
@@ -342,6 +373,8 @@ final class RotationEngine: ObservableObject {
         moveCursor(by: (pointerOutput.x - pointerRendered.x, pointerOutput.y - pointerRendered.y))
         pointerRendered = pointerOutput
         pointerActive = false
+        pointerDraining = false
+        if pointerProbe { flushPointerProbe() }
         renderLink?.invalidate()
         renderLink = nil
     }
@@ -356,10 +389,19 @@ final class RotationEngine: ObservableObject {
             }
             return
         }
-        guard fingers > 0, fingers == pointerFingers else { deactivatePointer(); return }
+        guard !pointerDraining else { return }
+        guard fingers > 0, fingers == pointerFingers else { pointerDraining = true; return }
         let offset = arrival - time
         // 시계가 조금씩 어긋나는 것도 따라가도록 최솟값을 아주 천천히 늘린다
-        sensorClockOffset = min(offset, (sensorClockOffset ?? offset) + 0.0005)
+        let clockOffset = min(offset, (sensorClockOffset ?? offset) + 0.0005)
+        sensorClockOffset = clockOffset
+        // 늦게 온 정도는 바로 키우고, 0.5초쯤에 걸쳐 천천히 줄인다
+        frameLateness = max(offset - clockOffset, frameLateness * 0.97)
+        if let last = lastSensorTime, time > last {
+            frameInterval += 0.1 * (min(time - last, 0.03) - frameInterval)
+        }
+        renderDelay = min(max(frameInterval + frameLateness + 0.003, Self.renderDelayRange.lowerBound), Self.renderDelayRange.upperBound)
+        if pointerProbe { probeLine(String(format: "F late=%.1f interval=%.1f delay=%.1f", (offset - clockOffset) * 1000, frameInterval * 1000, renderDelay * 1000)) }
 
         // 한 프레임의 이동은 8mm로 제한 (순간이동 방지)
         let travel = hypot(dx, dy)
@@ -398,9 +440,14 @@ final class RotationEngine: ObservableObject {
     }
 
     /// 지금 그릴 위치(한 프레임쯤 전)를 앞뒤 프레임 사이에서 이어 구해 커서를 옮긴다
-    private func renderPointer() {
+    /// vsyncTime: 방금 지난 화면 갱신 시각(CACurrentMediaTime 기준). 콜백이 불린 시각은 들쭉날쭉해서 갱신 시각으로 계산해야 간격이 고르다.
+    /// 다음 갱신 시각(targetTimestamp)을 쓰면 60Hz 화면에서 16ms 앞을 그리려다 아직 안 온 프레임을 기다리며 멈춘다 (실측: LG 60Hz 갱신의 22%)
+    private func renderPointer(vsyncTime: CFTimeInterval? = nil) {
         guard pointerActive, let offset = sensorClockOffset, let lastFrame = pointerFrames.last else { return }
-        let t = CFAbsoluteTimeGetCurrent() - offset - Self.renderDelay
+        let now = CFAbsoluteTimeGetCurrent()
+        let shown = vsyncTime.map { now + min(max($0 - CACurrentMediaTime(), -0.05), 0) } ?? now
+        let t = shown - offset - renderDelay
+        if pointerDraining, t >= lastFrame.time { deactivatePointer(); return }
         var position = (x: lastFrame.x, y: lastFrame.y)
         if let next = pointerFrames.firstIndex(where: { $0.time > t }) {
             if next == 0 {
@@ -412,9 +459,42 @@ final class RotationEngine: ObservableObject {
             }
         }
         let delta = (position.x - pointerRendered.x, position.y - pointerRendered.y)
+        if pointerProbe {
+            let system = CGEvent(source: nil)?.location ?? cursor
+            probeLine(String(format: "R ahead=%.1f stale=%.1f step=(%.2f,%.2f) drift=(%.1f,%.1f) screen=%@",
+                             (shown - now) * 1000, (t - lastFrame.time) * 1000, delta.0, delta.1,
+                             system.x - cursor.x, system.y - cursor.y, renderLinkScreen?.stringValue ?? "-"))
+        }
         guard delta.0 != 0 || delta.1 != 0 else { return }
         pointerRendered = position
         moveCursor(by: delta)
+    }
+
+    // 포인터 떨림을 살펴볼 때: defaults write com.magictrack.app rotation_pointer_probe -bool true 후 회전 다시 켜기 → /tmp/mmt_pointer_probe.log
+    // F = 센서 프레임(늦게 온 정도·간격·그리기 지연 ms), R = 화면 갱신마다 그리기(기준 갱신 시각 − 지금 ms, 마지막 프레임을 넘긴 ms,
+    // 이번 이동량, 그리기 직전 시스템 커서와 어긋난 정도), E = macOS 이동 이벤트 때 어긋난 정도
+    private static let pointerProbeKey = "rotation_pointer_probe"
+    private static let pointerProbeLogPath = "/tmp/mmt_pointer_probe.log"
+    private var pointerProbe = false
+    private var pointerProbeLines: [String] = []
+
+    private func probeLine(_ text: String) {
+        pointerProbeLines.append(String(format: "%.4f ", CFAbsoluteTimeGetCurrent()) + text)
+    }
+
+    /// 그리는 중에 파일을 쓰면 그 자체로 끊기므로 모아 뒀다가 손을 뗄 때 쓴다
+    private func flushPointerProbe() {
+        guard !pointerProbeLines.isEmpty else { return }
+        let text = pointerProbeLines.joined(separator: "\n") + "\n--\n"
+        pointerProbeLines.removeAll()
+        if !FileManager.default.fileExists(atPath: Self.pointerProbeLogPath) {
+            FileManager.default.createFile(atPath: Self.pointerProbeLogPath, contents: nil)
+        }
+        if let handle = FileHandle(forWritingAtPath: Self.pointerProbeLogPath) {
+            handle.seekToEndOfFile()
+            handle.write(text.data(using: .utf8)!)
+            try? handle.close()
+        }
     }
 
     private func moveCursor(by delta: (Double, Double)) {
@@ -772,7 +852,7 @@ final class RotationEngine: ObservableObject {
 
 /// CADisplayLink가 Objective-C 대상을 요구해서 두는 작은 중계 객체
 private final class DisplayLinkProxy: NSObject {
-    private let action: () -> Void
-    init(_ action: @escaping () -> Void) { self.action = action }
-    @objc func tick() { action() }
+    private let action: (CFTimeInterval) -> Void
+    init(_ action: @escaping (CFTimeInterval) -> Void) { self.action = action }
+    @objc func tick(_ link: CADisplayLink) { action(link.timestamp) }
 }

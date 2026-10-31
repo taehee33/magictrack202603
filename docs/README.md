@@ -11,6 +11,7 @@ MagicMagicTrack 문서 모음입니다.
 
 | 버전 | 릴리즈 노트 | GitHub 릴리스 본문 |
 |---|---|---|
+| v1.4.1 | [노트](release/release-notes-v1.4.1.md) | [본문](release/github-release-body-v1.4.1.md) |
 | v1.4.0 | [노트](release/release-notes-v1.4.0.md) | [본문](release/github-release-body-v1.4.0.md) |
 | v1.3.0 | [노트](release/release-notes-v1.3.0.md) | [본문](release/github-release-body-v1.3.0.md) |
 | v1.2.0 | [노트](release/release-notes-v1.2.0.md) | [본문](release/github-release-body-v1.2.0.md) |

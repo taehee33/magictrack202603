@@ -87,6 +87,6 @@ The version lives in one place: the Xcode build settings `MARKETING_VERSION` / `
 
 ## Documents
 
-- Release notes (Korean): [v1.4.0](docs/release/release-notes-v1.4.0.md) · [v1.3.0](docs/release/release-notes-v1.3.0.md) · [v1.2.0](docs/release/release-notes-v1.2.0.md) · [v1.1.1](docs/release/release-notes-v1.1.1.md) · [v1.1.0](docs/release/release-notes-v1.1.0.md)
+- Release notes (Korean): [v1.4.1](docs/release/release-notes-v1.4.1.md) · [v1.4.0](docs/release/release-notes-v1.4.0.md) · [v1.3.0](docs/release/release-notes-v1.3.0.md) · [v1.2.0](docs/release/release-notes-v1.2.0.md) · [v1.1.1](docs/release/release-notes-v1.1.1.md) · [v1.1.0](docs/release/release-notes-v1.1.0.md)
 - [Installation Guide (English)](docs/install/install-guide-en.md) · [설치 가이드 (한국어)](docs/install/install-guide-ko.md)
 - Publishing (Korean): [GitHub Releases](docs/publish/github-releases-without-developer-id.md) · [Release checklist](docs/publish/public-release-checklist.md) · [Notarization](tools/notarization_setup.md)
