@@ -1,6 +1,6 @@
 # GitHub Releases 배포 가이드 (Developer ID 없이)
 
-`Developer ID Application` 인증서와 공증 없이 GitHub Releases로 배포하는 방법입니다. v1.2.0, v1.3.0을 이 방식으로 배포했습니다.
+`Developer ID Application` 인증서와 공증 없이 GitHub Releases로 배포하는 방법입니다. v1.2.0부터 v1.4.0까지 이 방식으로 배포했습니다.
 
 ## 이 방식의 한계
 

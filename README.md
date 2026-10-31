@@ -87,6 +87,6 @@ cp Config/Signing.local.xcconfig.example Config/Signing.local.xcconfig   # git�
 
 ## 문서
 
-- [릴리즈 노트 v1.3.0](docs/release/release-notes-v1.3.0.md) · [v1.2.0](docs/release/release-notes-v1.2.0.md) · [v1.1.1](docs/release/release-notes-v1.1.1.md) · [v1.1.0](docs/release/release-notes-v1.1.0.md)
+- [릴리즈 노트 v1.4.0](docs/release/release-notes-v1.4.0.md) · [v1.3.0](docs/release/release-notes-v1.3.0.md) · [v1.2.0](docs/release/release-notes-v1.2.0.md) · [v1.1.1](docs/release/release-notes-v1.1.1.md) · [v1.1.0](docs/release/release-notes-v1.1.0.md)
 - [설치 가이드 (한국어)](docs/install/install-guide-ko.md) · [Installation Guide (English)](docs/install/install-guide-en.md)
 - [GitHub Releases로 배포하기](docs/publish/github-releases-without-developer-id.md) · [공개 배포 체크리스트](docs/publish/public-release-checklist.md) · [공증 준비](tools/notarization_setup.md)

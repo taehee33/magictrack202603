@@ -13,11 +13,13 @@ ZIP_PATH="$DIST_DIR/${APP_NAME}-${VERSION}-${BUILD}-macOS.zip"
 mkdir -p "$DIST_DIR"
 rm -f "$ZIP_PATH"
 
+# 배포본에는 디버거 연결 허용(get-task-allow)을 넣지 않는다
 xcodebuild \
   -project "$ROOT_DIR/MagicTrack.xcodeproj" \
   -scheme "MagicTrack" \
   -configuration Release \
   -derivedDataPath "$DERIVED_DATA_PATH" \
+  CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
   build
 
 ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
