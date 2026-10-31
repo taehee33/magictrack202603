@@ -64,6 +64,12 @@ final class RotationEngine: ObservableObject {
         permissionTimer = nil
     }
 
+    /// 권한을 다시 등록한 뒤 호출. 켜져 있던 이벤트 탭은 권한이 풀리면 조용히 멈추므로 끄고 다시 판단한다
+    func recheckPermission() {
+        stopTap()
+        reconcile()
+    }
+
     private func reconcile() {
         // 180°는 드라이버로 처리. 지원하지 않으면 이벤트 탭으로 대신 처리
         let flipByDriver = rotation == .upsideDown && TouchSourceMonitor.shared.supportsSurfaceFlip

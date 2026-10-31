@@ -226,6 +226,16 @@
         }
       }
     },
+    "권한 다시 등록…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-register Permission…"
+          }
+        }
+      }
+    },
     "권한 열기": {
       "localizations": {
         "en": {
@@ -382,6 +392,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Change Device"
+          }
+        }
+      }
+    },
+    "다시 등록": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-register"
           }
         }
       }
@@ -666,6 +686,36 @@
         }
       }
     },
+    "목록에서 이 앱 항목을 지우고 다시 추가해요. 이어서 뜨는 창이나 시스템 설정에서 %@을 다시 켜 주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This removes the app from the list and adds it again. Turn %@ back on in the window that appears or in System Settings."
+          }
+        }
+      }
+    },
+    "목록에서 지우지 못했어요. 시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용에서 %@을 −로 지운 뒤 +로 다시 추가해 주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t remove it from the list. In System Settings › Privacy & Security › Accessibility, remove %@ with − and add it again with +."
+          }
+        }
+      }
+    },
+    "목록에서 켜져 있는데도 90° 회전이 안 되면 '권한 다시 등록'을 눌러 주세요. 앱을 업데이트하거나 다시 빌드하면 macOS가 새 앱으로 보고 예전 허용을 쓰지 않을 수 있어요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If 90° rotation does not work even though the app is turned on in the list, click “Re-register Permission”. After an update or rebuild, macOS may treat the app as new and ignore the earlier permission."
+          }
+        }
+      }
+    },
     "미분류": {
       "localizations": {
         "en": {
@@ -896,12 +946,22 @@
         }
       }
     },
-    "손쉬운 사용 권한 열기": {
+    "손쉬운 사용": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open Accessibility Settings"
+            "value": "Accessibility"
+          }
+        }
+      }
+    },
+    "손쉬운 사용 권한을 다시 등록할까요?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-register the Accessibility permission?"
           }
         }
       }
@@ -1066,6 +1126,16 @@
         }
       }
     },
+    "앱 위치 보기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show App Location"
+          }
+        }
+      }
+    },
     "앱 자동전환": {
       "localizations": {
         "en": {
@@ -1212,6 +1282,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "R 90°"
+          }
+        }
+      }
+    },
+    "이 앱 위치: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App location: %@"
           }
         }
       }
@@ -1767,6 +1847,36 @@
       }
     },
     "허용": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow"
+          }
+        }
+      }
+    },
+    "허용 안 됨": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Allowed"
+          }
+        }
+      }
+    },
+    "허용됨": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allowed"
+          }
+        }
+      }
+    },
+    "허용하기": {
       "localizations": {
         "en": {
           "stringUnit": {

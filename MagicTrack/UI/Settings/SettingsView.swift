@@ -18,6 +18,8 @@ struct SettingsView: View {
     @ObservedObject private var rotationEngine = RotationEngine.shared
     @ObservedObject private var hotKeys = HotKeyManager.shared
     @ObservedObject private var updateChecker = UpdateChecker.shared
+    @ObservedObject private var permissions = PermissionManager.shared
+    @State private var showResetPermissionConfirm = false
     @AppStorage(UpdateChecker.autoCheckKey) private var autoCheckUpdates = true
 
     @State private var loginItemStatus = SMAppService.mainApp.status
@@ -284,9 +286,52 @@ struct SettingsView: View {
             Text("감도·스크롤·클릭 압력 적용, 만진 트랙패드로 자동 전환, 앱 자동전환에는 권한이 필요하지 않아요. 매직 트랙패드를 **90°로 회전**할 때만 손쉬운 사용 권한이 필요해요. (180°는 권한 없이 동작)")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
-            if rotationEngine.needsAccessibility {
-                Button("손쉬운 사용 권한 열기") { rotationEngine.requestAccessibility() }
+
+            LabeledContent("손쉬운 사용") {
+                if permissions.hasAccessibility {
+                    Label("허용됨", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                } else {
+                    Label("허용 안 됨", systemImage: "exclamationmark.circle.fill")
+                        .foregroundStyle(.orange)
+                }
             }
+
+            HStack {
+                if !permissions.hasAccessibility {
+                    Button("허용하기") {
+                        permissions.requestAccessibility()
+                        permissions.openPrivacySettings()
+                    }
+                }
+                Button("권한 다시 등록…") { showResetPermissionConfirm = true }
+                Spacer()
+                Button("앱 위치 보기") { permissions.revealAppInFinder() }
+            }
+            .confirmationDialog("손쉬운 사용 권한을 다시 등록할까요?", isPresented: $showResetPermissionConfirm) {
+                Button("다시 등록") { permissions.resetAccessibility() }
+                Button("취소", role: .cancel) {}
+            } message: {
+                Text("목록에서 이 앱 항목을 지우고 다시 추가해요. 이어서 뜨는 창이나 시스템 설정에서 \(AppInfo.name)을 다시 켜 주세요.")
+            }
+
+            Text("목록에서 켜져 있는데도 90° 회전이 안 되면 '권한 다시 등록'을 눌러 주세요. 앱을 업데이트하거나 다시 빌드하면 macOS가 새 앱으로 보고 예전 허용을 쓰지 않을 수 있어요.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+
+            if permissions.lastResetFailed {
+                Text("목록에서 지우지 못했어요. 시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용에서 \(AppInfo.name)을 −로 지운 뒤 +로 다시 추가해 주세요.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.orange)
+            }
+
+            Text("이 앱 위치: \(permissions.appPath)")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+        }
+        .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
+            permissions.checkAccessibility()
         }
     }
 

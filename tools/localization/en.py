@@ -185,4 +185,17 @@ EN = {
     "확인하지 못했어요. 인터넷 연결을 확인해 주세요.": "Couldn’t check. Check your internet connection.",
     "마지막 확인: %@": "Last checked: %@",
     "아직 확인하지 않았어요": "Not checked yet",
+    # 권한 다시 등록
+    "손쉬운 사용": "Accessibility",
+    "허용됨": "Allowed",
+    "허용 안 됨": "Not Allowed",
+    "허용하기": "Allow",
+    "권한 다시 등록…": "Re-register Permission…",
+    "다시 등록": "Re-register",
+    "앱 위치 보기": "Show App Location",
+    "손쉬운 사용 권한을 다시 등록할까요?": "Re-register the Accessibility permission?",
+    "목록에서 이 앱 항목을 지우고 다시 추가해요. 이어서 뜨는 창이나 시스템 설정에서 %@을 다시 켜 주세요.": "This removes the app from the list and adds it again. Turn %@ back on in the window that appears or in System Settings.",
+    "목록에서 켜져 있는데도 90° 회전이 안 되면 '권한 다시 등록'을 눌러 주세요. 앱을 업데이트하거나 다시 빌드하면 macOS가 새 앱으로 보고 예전 허용을 쓰지 않을 수 있어요.": "If 90° rotation does not work even though the app is turned on in the list, click “Re-register Permission”. After an update or rebuild, macOS may treat the app as new and ignore the earlier permission.",
+    "목록에서 지우지 못했어요. 시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용에서 %@을 −로 지운 뒤 +로 다시 추가해 주세요.": "Couldn’t remove it from the list. In System Settings › Privacy & Security › Accessibility, remove %@ with − and add it again with +.",
+    "이 앱 위치: %@": "App location: %@",
 }
