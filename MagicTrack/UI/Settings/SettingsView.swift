@@ -14,6 +14,7 @@ struct SettingsView: View {
     @AppStorage(AppVisibilityManager.showMenuBarIconKey) private var showMenuBarIcon = true
     @AppStorage(SwitchHUD.enabledKey) private var showSwitchHUD = true
     @AppStorage(AppVisibilityManager.keepRunningOnDockQuitKey) private var keepRunningOnDockQuit = true
+    @AppStorage(AppVisibilityManager.hideDockOnWindowCloseKey) private var hideDockOnWindowClose = true
     @AppStorage(BatteryMonitor.alertEnabledKey) private var lowBatteryAlert = true
     @AppStorage(BatteryMonitor.thresholdKey) private var lowBatteryThreshold = 20
     @ObservedObject private var battery = BatteryMonitor.shared
@@ -73,6 +74,10 @@ struct SettingsView: View {
 
                 Toggle("메뉴바에 사용 중인 트랙패드와 회전 표시", isOn: $menuBarShowsLabel)
                     .disabled(!showMenuBarIcon)
+
+                Toggle("창을 닫으면 Dock에서 숨기기", isOn: $hideDockOnWindowClose)
+                    .disabled(!showMenuBarIcon)
+                    .help(String(localized: "창을 닫으면 Dock 아이콘이 사라지고 메뉴바에서만 실행돼요. 메뉴바에서 ‘열기’를 누르면 다시 나타나요."))
 
                 Toggle("Dock에서 종료해도 메뉴바에서 계속 실행", isOn: $keepRunningOnDockQuit)
                     .disabled(!showMenuBarIcon)

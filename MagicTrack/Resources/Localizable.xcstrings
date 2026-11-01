@@ -1786,6 +1786,26 @@
         }
       }
     },
+    "창을 닫으면 Dock 아이콘이 사라지고 메뉴바에서만 실행돼요. 메뉴바에서 ‘열기’를 누르면 다시 나타나요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closing the window removes the Dock icon and keeps the app in the menu bar. Click ‘Open’ in the menu bar to bring it back."
+          }
+        }
+      }
+    },
+    "창을 닫으면 Dock에서 숨기기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide from the Dock when the window is closed"
+          }
+        }
+      }
+    },
     "초기화": {
       "localizations": {
         "en": {

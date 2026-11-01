@@ -31,6 +31,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             name: .dockVisibilityChanged,
             object: nil
         )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWindowWillClose),
+            name: NSWindow.willCloseNotification,
+            object: nil
+        )
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -72,6 +79,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Dock에서 종료해 숨겼던 Dock 아이콘을 다시 보인다
         AppVisibilityManager.shared.applyCurrentDockPreference()
         return true
+    }
+
+    /// 마지막 창을 X로 닫으면 Dock 아이콘을 숨긴다. 메뉴바 '열기'·Dock 재실행 때 다시 보인다
+    @objc private func handleWindowWillClose(_ notification: Notification) {
+        guard let closing = notification.object as? NSWindow, closing.canBecomeMain,
+              AppVisibilityManager.shared.hidesDockOnWindowClose,
+              AppVisibilityManager.shared.showsMenuBarIcon else { return }
+        let othersOpen = NSApp.windows.contains { $0 !== closing && $0.isVisible && $0.canBecomeMain }
+        guard !othersOpen else { return }
+        // 창이 다 닫힌 뒤에 바꿔야 닫히는 애니메이션이 끊기지 않는다
+        DispatchQueue.main.async {
+            guard !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) else { return }
+            NSApp.setActivationPolicy(.accessory)
+        }
     }
 
     @objc private func handleDockVisibilityChanged() {
@@ -407,6 +428,7 @@ final class AppVisibilityManager {
     static let showDockIconKey = "showDockIcon"
     static let showMenuBarIconKey = "showMenuBarIcon"
     static let keepRunningOnDockQuitKey = "keep_running_on_dock_quit"
+    static let hideDockOnWindowCloseKey = "hide_dock_on_window_close"
 
     private init() {}
 
@@ -420,6 +442,11 @@ final class AppVisibilityManager {
     /// Dock에서 종료해도 메뉴바에서 계속 실행 (기본 켬)
     var keepsRunningOnDockQuit: Bool {
         UserDefaults.standard.object(forKey: Self.keepRunningOnDockQuitKey) as? Bool ?? true
+    }
+
+    /// 창을 닫으면 Dock 아이콘을 숨기고 메뉴바에서만 실행 (기본 켬)
+    var hidesDockOnWindowClose: Bool {
+        UserDefaults.standard.object(forKey: Self.hideDockOnWindowCloseKey) as? Bool ?? true
     }
 
     var showsMenuBarIcon: Bool {
