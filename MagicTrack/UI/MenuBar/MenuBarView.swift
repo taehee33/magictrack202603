@@ -258,6 +258,10 @@ private struct CompactDeviceSection: View {
                 }
 
                 Spacer()
+
+                if device.type == .magicTrackpad && device.isConnected {
+                    BatteryBadge()
+                }
             }
 
             CompactSliderRow(

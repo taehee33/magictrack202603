@@ -72,6 +72,10 @@ struct TrackpadCardView: View {
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(accentColor)
                     }
+                    // 매직 트랙패드는 배터리 잔량 (예: · 🔋 82%)
+                    if device.type == .magicTrackpad && device.isConnected {
+                        BatteryBadge()
+                    }
                     }
                 }
 
@@ -475,6 +479,27 @@ struct RotationStatusView: View {
                   systemImage: engine.isRunning ? "checkmark.circle" : "info.circle")
                 .font(.system(size: compact ? 11 : 10, weight: .medium))
                 .foregroundStyle(.secondary)
+        }
+    }
+}
+
+// MARK: - BatteryBadge
+// 매직 트랙패드 배터리 잔량. 알림 기준 이하면 빨간색
+
+struct BatteryBadge: View {
+    @ObservedObject private var battery = BatteryMonitor.shared
+    @AppStorage(BatteryMonitor.thresholdKey) private var threshold = 20
+
+    var body: some View {
+        if let percent = battery.percent {
+            let low = percent <= threshold
+            HStack(spacing: 3) {
+                Image(systemName: BatteryLevel.symbolName(for: percent))
+                Text(verbatim: "\(percent)%")
+            }
+            .font(.system(size: 11, weight: low ? .semibold : .regular))
+            .foregroundStyle(low ? Color.red : Color.secondary)
+            .help(low ? String(localized: "배터리가 부족해요. 충전해 주세요.") : String(localized: "배터리 잔량"))
         }
     }
 }

@@ -10,6 +10,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 트랙패드 모니터링 시작
         TrackpadManager.shared.startMonitoring()
 
+        // 매직 트랙패드 배터리 잔량·부족 알림
+        BatteryMonitor.shared.start()
+
         // 앱 전환 감지 시작
         AppSwitcherManager.shared.startMonitoring()
 
@@ -33,8 +36,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         NotificationCenter.default.removeObserver(self)
         HotKeyManager.shared.unregisterToggleTrackpadHotKey()
+        BatteryMonitor.shared.stop()
         TrackpadManager.shared.stopMonitoring()
         AppSwitcherManager.shared.stopMonitoring()
+    }
+
+    /// Dock에서 '종료'를 누르면 끄지 않고 Dock 아이콘만 숨긴 채 메뉴바에서 계속 실행 (설정에서 끌 수 있음)
+    /// 메뉴바 '종료'·⌘Q는 Apple Event 없이 terminate를 부르므로 그대로 종료된다
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard AppVisibilityManager.shared.keepsRunningOnDockQuit,
+              AppVisibilityManager.shared.showsMenuBarIcon,
+              Self.isQuitFromDock() else { return .terminateNow }
+        NSApp.windows.filter { $0.isVisible && $0.canBecomeMain }.forEach { $0.close() }
+        NSApp.setActivationPolicy(.accessory)
+        SwitchHUD.show(title: String(localized: "메뉴바에서 계속 실행 중"),
+                       subtitle: String(localized: "완전히 끄려면 메뉴바에서 ‘종료’를 누르세요"),
+                       force: true, duration: 2.5)
+        return .terminateCancel
+    }
+
+    /// 종료 요청이 Dock에서 왔는지: 바깥에서 온 '종료' Apple Event이면서 로그아웃·재시동·시스템 종료 사유가 없을 때
+    private static func isQuitFromDock() -> Bool {
+        guard let event = NSAppleEventManager.shared().currentAppleEvent,
+              event.eventClass == AEEventClass(kCoreEventClass),
+              event.eventID == AEEventID(kAEQuitApplication) else { return false }
+        return event.attributeDescriptor(forKeyword: AEKeyword(kAEQuitReason)) == nil
+            && event.paramDescriptor(forKeyword: AEKeyword(kAEQuitReason)) == nil
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -42,6 +69,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // 메뉴바 앱에서 Dock 아이콘 클릭 시 메인 창 열기
             NSApp.windows.first?.makeKeyAndOrderFront(nil)
         }
+        // Dock에서 종료해 숨겼던 Dock 아이콘을 다시 보인다
+        AppVisibilityManager.shared.applyCurrentDockPreference()
         return true
     }
 
@@ -377,6 +406,7 @@ final class AppVisibilityManager {
     static let shared = AppVisibilityManager()
     static let showDockIconKey = "showDockIcon"
     static let showMenuBarIconKey = "showMenuBarIcon"
+    static let keepRunningOnDockQuitKey = "keep_running_on_dock_quit"
 
     private init() {}
 
@@ -385,6 +415,11 @@ final class AppVisibilityManager {
             return storedValue
         }
         return true
+    }
+
+    /// Dock에서 종료해도 메뉴바에서 계속 실행 (기본 켬)
+    var keepsRunningOnDockQuit: Bool {
+        UserDefaults.standard.object(forKey: Self.keepRunningOnDockQuitKey) as? Bool ?? true
     }
 
     var showsMenuBarIcon: Bool {

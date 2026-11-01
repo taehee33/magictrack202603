@@ -9,5 +9,6 @@ xcrun swiftc -O -o "$OUT" \
   "$ROOT/MagicTrack/Core/SwitchCoordinator.swift" \
   "$ROOT/MagicTrack/Core/TrackpadDevice.swift" \
   "$ROOT/MagicTrack/Core/SensitivityController.swift" \
-  "$ROOT/MagicTrack/Core/UpdateChecker.swift"
+  "$ROOT/MagicTrack/Core/UpdateChecker.swift" \
+  "$ROOT/MagicTrack/Core/BatteryAlertPolicy.swift"
 "$OUT"

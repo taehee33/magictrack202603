@@ -95,5 +95,16 @@ check(!AppVersion.isNewer("1.3", than: "1.3.0"), "새 버전: 1.3과 1.3.0은 �
 check(!AppVersion.isNewer("1.2.9", than: "1.3.0"), "새 버전: 예전 버전은 알리지 않음")
 check(AppVersion.isNewer("1.3.1-beta", than: "1.3.0"), "새 버전: 꼬리(-beta)는 무시")
 
+// MARK: - BatteryAlertPolicy (매직 트랙패드 배터리 부족 알림)
+
+check(BatteryAlertPolicy.evaluate(percent: 50, threshold: 20, alerted: .none) == (.none, nil), "배터리: 기준 위면 알리지 않음")
+check(BatteryAlertPolicy.evaluate(percent: 20, threshold: 20, alerted: .none) == (.low, .low), "배터리: 기준에 닿으면 부족 알림")
+check(BatteryAlertPolicy.evaluate(percent: 15, threshold: 20, alerted: .low) == (.low, nil), "배터리: 이미 알렸으면 다시 알리지 않음")
+check(BatteryAlertPolicy.evaluate(percent: 5, threshold: 20, alerted: .low) == (.critical, .critical), "배터리: 5% 이하면 한 번 더 알림")
+check(BatteryAlertPolicy.evaluate(percent: 3, threshold: 20, alerted: .none) == (.critical, .critical), "배터리: 처음부터 5% 이하면 거의 없음 알림")
+check(BatteryAlertPolicy.evaluate(percent: 23, threshold: 20, alerted: .low) == (.low, nil), "배터리: 기준 바로 위에서 오르내려도 다시 알리지 않음")
+check(BatteryAlertPolicy.evaluate(percent: 60, threshold: 20, alerted: .critical) == (.none, nil), "배터리: 충전하면 다시 알릴 준비")
+check(BatteryLevel.symbolName(for: 99) == "battery.100percent" && BatteryLevel.symbolName(for: 10) == "battery.0percent", "배터리 아이콘 단계")
+
 print(failures == 0 ? "\n모든 테스트 통과" : "\n실패 \(failures)건")
 exit(failures == 0 ? 0 : 1)

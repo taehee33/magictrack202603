@@ -14,8 +14,9 @@ enum SwitchHUD {
     private static var panel: NSPanel?
     private static var hideWorkItem: DispatchWorkItem?
 
-    static func show(title: String, subtitle: String?) {
-        guard isEnabled else { return }
+    /// - force: 전환 알림 설정과 상관없이 보여 줄 안내 (Dock에서 종료했을 때 등)
+    static func show(title: String, subtitle: String?, force: Bool = false, duration: TimeInterval = 0.9) {
+        guard isEnabled || force else { return }
         let panel = self.panel ?? makePanel()
         self.panel = panel
         panel.contentView = NSHostingView(rootView: HUDView(title: title, subtitle: subtitle))
@@ -34,7 +35,7 @@ enum SwitchHUD {
             }
         }
         hideWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: work)
     }
 
     private static func makePanel() -> NSPanel {

@@ -13,6 +13,10 @@ struct SettingsView: View {
     @AppStorage(AppVisibilityManager.showDockIconKey) private var showDockIcon = true
     @AppStorage(AppVisibilityManager.showMenuBarIconKey) private var showMenuBarIcon = true
     @AppStorage(SwitchHUD.enabledKey) private var showSwitchHUD = true
+    @AppStorage(AppVisibilityManager.keepRunningOnDockQuitKey) private var keepRunningOnDockQuit = true
+    @AppStorage(BatteryMonitor.alertEnabledKey) private var lowBatteryAlert = true
+    @AppStorage(BatteryMonitor.thresholdKey) private var lowBatteryThreshold = 20
+    @ObservedObject private var battery = BatteryMonitor.shared
     @AppStorage(DeveloperMode.key) private var developerMode = false
     @AppStorage(MenuBarIcon.showsLabelKey) private var menuBarShowsLabel = true
     @ObservedObject private var rotationEngine = RotationEngine.shared
@@ -70,6 +74,10 @@ struct SettingsView: View {
                 Toggle("메뉴바에 사용 중인 트랙패드와 회전 표시", isOn: $menuBarShowsLabel)
                     .disabled(!showMenuBarIcon)
 
+                Toggle("Dock에서 종료해도 메뉴바에서 계속 실행", isOn: $keepRunningOnDockQuit)
+                    .disabled(!showMenuBarIcon)
+                    .help(String(localized: "Dock 아이콘의 ‘종료’는 Dock 아이콘만 숨겨요. 완전히 끄려면 메뉴바에서 ‘종료’를 누르세요."))
+
                 Text(visibilityDescription)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
@@ -112,6 +120,8 @@ struct SettingsView: View {
                     }
                 }
             }
+
+            batterySection
 
             Section("트랙패드 전환") {
                 Toggle("전환할 때 화면에 알림 보이기", isOn: $showSwitchHUD)
@@ -255,6 +265,54 @@ struct SettingsView: View {
     }
 
     // MARK: - 앱 자동전환
+
+    private var batterySection: some View {
+        Section("매직 트랙패드 배터리") {
+            LabeledContent("남은 배터리") {
+                if battery.percent != nil {
+                    BatteryBadge()
+                } else {
+                    Text(trackpadManager.magicTrackpad == nil ? LocalizedStringKey("연결 없음") : "확인할 수 없음")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Toggle("배터리가 부족하면 알림 보내기", isOn: $lowBatteryAlert)
+                .onChange(of: lowBatteryAlert) { _, enabled in
+                    if enabled { battery.evaluateAlert() }
+                }
+
+            if lowBatteryAlert {
+                Picker("알림 기준", selection: $lowBatteryThreshold) {
+                    ForEach(BatteryMonitor.thresholdOptions, id: \.self) { value in
+                        Text(verbatim: "\(value)%").tag(value)
+                    }
+                }
+                .onChange(of: lowBatteryThreshold) { _, _ in battery.evaluateAlert() }
+
+                if battery.notificationsDenied {
+                    HStack {
+                        Text("알림이 꺼져 있어요. 시스템 설정 › 알림에서 MagicMagicTrack 알림을 허용해 주세요.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.orange)
+                        Spacer()
+                        Button("알림 설정 열기") {
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension")!)
+                        }
+                        .controlSize(.small)
+                    }
+                }
+
+                Text("기준 아래로 떨어질 때 한 번, 5% 이하일 때 한 번 더 알려요. 충전하면 다시 알릴 준비를 해요.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .onAppear {
+            battery.refresh()
+            battery.refreshNotificationStatus()
+        }
+    }
 
     private var appRulesSection: some View {
         Section {

@@ -70,12 +70,32 @@
         }
       }
     },
+    "Dock 아이콘의 ‘종료’는 Dock 아이콘만 숨겨요. 완전히 끄려면 메뉴바에서 ‘종료’를 누르세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit from the Dock only hides the Dock icon. To quit completely, choose ‘Quit’ in the menu bar."
+          }
+        }
+      }
+    },
     "Dock에만 표시됩니다.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Shown in the Dock only."
+          }
+        }
+      }
+    },
+    "Dock에서 종료해도 메뉴바에서 계속 실행": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep running in the menu bar when quit from the Dock"
           }
         }
       }
@@ -326,12 +346,42 @@
         }
       }
     },
+    "기준 아래로 떨어질 때 한 번, 5% 이하일 때 한 번 더 알려요. 충전하면 다시 알릴 준비를 해요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You'll be notified once when it drops below this level and again at 5% or less. Charging resets the alerts."
+          }
+        }
+      }
+    },
     "기타…": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "More…"
+          }
+        }
+      }
+    },
+    "남은 배터리": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Battery left"
+          }
+        }
+      }
+    },
+    "남은 배터리 %lld%%. 충전해 주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%% battery left. Please charge it."
           }
         }
       }
@@ -606,6 +656,36 @@
         }
       }
     },
+    "매직 트랙패드 배터리": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magic Trackpad Battery"
+          }
+        }
+      }
+    },
+    "매직 트랙패드 배터리가 거의 없어요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magic Trackpad battery is almost empty"
+          }
+        }
+      }
+    },
+    "매직 트랙패드 배터리가 부족해요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magic Trackpad battery is low"
+          }
+        }
+      }
+    },
     "매직 트랙패드 선택": {
       "localizations": {
         "en": {
@@ -662,6 +742,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Shown in the menu bar only."
+          }
+        }
+      }
+    },
+    "메뉴바에서 계속 실행 중": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still running in the menu bar"
           }
         }
       }
@@ -742,6 +832,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unknown"
+          }
+        }
+      }
+    },
+    "배터리 잔량": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Battery level"
+          }
+        }
+      }
+    },
+    "배터리가 부족하면 알림 보내기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify when battery is low"
+          }
+        }
+      }
+    },
+    "배터리가 부족해요. 충전해 주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Battery is low. Please charge it."
           }
         }
       }
@@ -1086,6 +1206,36 @@
         }
       }
     },
+    "알림 기준": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify at"
+          }
+        }
+      }
+    },
+    "알림 설정 열기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Notification Settings"
+          }
+        }
+      }
+    },
+    "알림이 꺼져 있어요. 시스템 설정 › 알림에서 MagicMagicTrack 알림을 허용해 주세요.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are off. Allow MagicMagicTrack in System Settings › Notifications."
+          }
+        }
+      }
+    },
     "앱 %lld": {
       "localizations": {
         "en": {
@@ -1282,6 +1432,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Right 90°"
+          }
+        }
+      }
+    },
+    "완전히 끄려면 메뉴바에서 ‘종료’를 누르세요": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To quit completely, choose ‘Quit’ in the menu bar"
           }
         }
       }
@@ -1972,6 +2132,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Couldn’t check. Check your internet connection."
+          }
+        }
+      }
+    },
+    "확인할 수 없음": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unavailable"
           }
         }
       }
