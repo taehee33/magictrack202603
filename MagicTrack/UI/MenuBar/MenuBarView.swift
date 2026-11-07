@@ -9,6 +9,8 @@ struct MenuBarView: View {
     @Environment(\.openWindow) var openWindow
     @ObservedObject private var hotKeys = HotKeyManager.shared
     @ObservedObject private var updateChecker = UpdateChecker.shared
+    /// 장치 카드 높이. 메뉴바 창은 ScrollView 높이를 0으로 접어서 직접 재서 맞춘다
+    @State private var devicesHeight: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,8 +61,9 @@ struct MenuBarView: View {
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { devicesHeight = $0 }
                 }
-                .frame(maxHeight: 360)
+                .frame(height: min(max(devicesHeight, 1), 360))
             }
 
             Divider()
